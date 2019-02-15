@@ -18,7 +18,7 @@
     "Firefox ESR"
   ],
   "scripts": {
-    "lint:php": "vendor/bin/phpcs -v --colors --extensions=php --ignore=\"*/vendor/*,*/node_modules/*\" --standard=phpcs.ruleset.xml *.php includes/",
+    "lint:php": "vendor/bin/phpcs -v --colors --extensions=php --ignore=\"*/vendor/*,*/node_modules/*\" --standard=phpcs.ruleset.xml *.php includes/ templates/",
     "lint:css": "stylelint \"src/_css/**/*.css\"",
     "clean": "rimraf {css/}",
     "style": "postcss src/_css/main.css --output css/main.css",
