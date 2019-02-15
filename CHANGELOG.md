@@ -21,6 +21,7 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
+- Plugin setup class with activation, deactivation, and API request methods, as well as an admin screen.
 - Base plugin loader and index placeholder.
 - Plugin documentation and licensing files.
 - :wrench: Build tools and configuration.
