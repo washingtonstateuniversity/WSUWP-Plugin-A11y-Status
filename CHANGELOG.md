@@ -21,6 +21,7 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
+- Base plugin loader and index placeholder.
 - Plugin documentation and licensing files.
 - :wrench: Build tools and configuration.
 - Initial configuration files.
