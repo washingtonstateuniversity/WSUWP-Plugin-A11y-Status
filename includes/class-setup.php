@@ -118,6 +118,7 @@ class WSUWP_A11y_Status {
 	public function setup_hooks() {
 		add_action( 'admin_init', array( $this, 'set_properties' ) );
 		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
 	}
 
@@ -487,6 +488,55 @@ class WSUWP_A11y_Status {
 	 */
 	public function enqueue_scripts() {
 		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->version );
+	}
+
+	/**
+	 * Displays admin notices based on the current user's WSU A11y status.
+	 *
+	 * This will display an error message if the user is not certified and a
+	 * warning message if the user's certification will expire in less than one
+	 * month. Neither message is dismissible.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @return void
+	 */
+	public function user_a11y_status_notices() {
+		$training_link = 'http://go.wsu.edu/web-accessibility';
+
+		// Display error message if the current user is not certified.
+		if ( ! self::is_user_certified() ) {
+			$class      = 'notice-error';
+			$message    = __( 'You need to take the WSU Accessiblity Training.', 'wsuwp-a11y-status' );
+			$expiration = '';
+		} else {
+			// Display warning message the user's certification expires soon.
+			if ( self::is_user_a11y_lt_one_month() ) {
+				$class      = 'notice-warning';
+				$message    = __( 'WSU Accessiblity Certification Expiring Soon.', 'wsuwp-a11y-status' );
+				$expiration = self::get_user_a11y_expiration_date();
+			} else {
+				return;
+			}
+		}
+		?>
+		<div class="notice <?php echo esc_attr( $class ); ?>">
+			<p>
+				<strong><?php echo esc_html( $message ); ?></strong>
+				<?php
+				if ( '' !== $expiration ) {
+					printf(
+						/* translators: 1: the human readble time remaining; 2: the expiration date */
+						__( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+						esc_html( self::get_user_a11y_time_to_expiration() ),
+						esc_html( $expiration )
+					);
+				}
+				?>
+				<strong><a href="<?php echo esc_url( $training_link ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+			</p>
+		</div>
+		<?php
 	}
 
 }
