@@ -181,15 +181,6 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
-	 * Enqueues the plugin admin styles.
-	 *
-	 * @since 0.1.0
-	 */
-	public function enqueue_scripts() {
-		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->version );
-	}
-
-	/**
 	 * Gets the WSU Accessibility Training status info from the WSU API.
 	 *
 	 * Connect to the API to retrieve info for a given user ID(s) in JSON
@@ -361,6 +352,15 @@ class WSUWP_A11y_Status {
 	 */
 	public function load_a11y_status_dashboard_cb() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+	}
+
+	/**
+	 * Enqueues the plugin admin styles.
+	 *
+	 * @since 0.1.0
+	 */
+	public function enqueue_scripts() {
+		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->version );
 	}
 
 }
