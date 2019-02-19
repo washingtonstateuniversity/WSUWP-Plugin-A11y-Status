@@ -249,6 +249,132 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Gets the full a11y certification status of the given user.
+	 *
+	 * Takes an email address or WSU NID and retrieves the full accessiblity
+	 * status data for that user if it exists in the cached transient.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
+	 * @return array|false The accessibility status data for the given user, or false if the data is not found.
+	 */
+	public static function get_a11y_status_by_email( $user_email = '' ) {
+		$a11y_status = get_transient( 'a11y_status_wsuwp_a11y_status' );
+
+		if ( ! $a11y_status ) {
+			return false;
+		}
+
+		if ( '' === $user_email ) {
+			$current_user = wp_get_current_user();
+
+			if ( ! $current_user->exists() ) {
+				return false;
+			}
+
+			$user_email = implode( explode( '@', $current_user->user_email, -1 ) );
+		}
+
+		// Get the email username if given a full email string.
+		if ( false !== strpos( $user_email, '@' ) ) {
+			$user_email = implode( explode( '@', $user_email, -1 ) );
+		}
+
+		if ( array_key_exists( $user_email, $a11y_status ) ) {
+			return $a11y_status[ $user_email ];
+		}
+
+		return false;
+	}
+
+	/**
+	 * Gets the date a given user's a11y certification expires.
+	 *
+	 * Retrieves the date a given user's WSU Accessibility certification
+	 * expires, formatted based on the WP site option `date_format`.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
+	 * @return string|false The expiration date for the given user, or false if the data is not found or the user is not certified.
+	 */
+	public static function get_user_a11y_expiration_date( $user_email = '' ) {
+		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+			$expires = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
+
+			return date_format( $expires, get_option( 'date_format' ) );
+		}
+
+		return false;
+	}
+
+	/**
+	 * Gets the time remaining until a11y certification expires.
+	 *
+	 * Returns the time remaining until a given user's WSU Accessibility
+	 * certification expires, formatted into a human readable format using
+	 * the WP `human_time_diff` function {@see https://developer.wordpress.org/reference/functions/human_time_diff/}
+	 * The time is returned in a human readable format such as "1 hour",
+	 * "5 mins", or "2 days".
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
+	 * @return string|false The remaining time for the given user, or false if the data is not found or the user is not certified.
+	 */
+	public static function get_user_a11y_time_to_expiration( $user_email = '' ) {
+		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+			$user_expiry_date   = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
+			$time_to_expiration = human_time_diff( date_format( $user_expiry_date, 'U' ) );
+
+			return $time_to_expiration;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determines whether a given user is A11y Training certified.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
+	 * @return bool True if the user is certified, false if not or the data is not found.
+	 */
+	public static function is_user_certified( $user_email = '' ) {
+		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
+	 * Determines if a user's a11y certification expires in less than a month.
+	 *
+	 * @since 0.2.0
+	 *
+	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
+	 * @return bool True if the user's certification expires in less than one month, false if not or the data is not found.
+	 */
+	public static function is_user_a11y_lt_one_month( $user_email = '' ) {
+		$time_to_expiration = self::get_user_a11y_time_to_expiration( $user_email );
+
+		if ( false !== strpos( $time_to_expiration, 'months' ) || false !== strpos( $time_to_expiration, 'years' ) ) {
+			return false;
+		}
+
+		return true;
+	}
+
+	/**
 	 * Deletes the `a11y_status_{plugin-slug}` transient to flush the cache.
 	 *
 	 * @since 0.1.0
