@@ -40,7 +40,7 @@ $users             = get_users( array( 'fields' => array( 'user_email' ) ) );
 ?>
 
 <div class="wrap wsuwp-a11y-status">
-	<h1 class="wp-heading-inline"><?php esc_html_e( 'WSU Accessiblity Training Status', 'wsuwp-a11y-status' ); ?></h1>
+	<h1 class="wp-heading-inline"><?php esc_html_e( 'WSU Accessibility Training Status', 'wsuwp-a11y-status' ); ?></h1>
 
 	<a class="page-title-action" href="<?php echo esc_url( $force_refresh_url ); ?>"><?php esc_html_e( 'Refresh Data', 'wsuwp-a11y-status' ); ?></a>
 

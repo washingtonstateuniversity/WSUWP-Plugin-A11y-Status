@@ -252,7 +252,7 @@ class WSUWP_A11y_Status {
 	/**
 	 * Gets the full a11y certification status of the given user.
 	 *
-	 * Takes an email address or WSU NID and retrieves the full accessiblity
+	 * Takes an email address or WSU NID and retrieves the full accessibility
 	 * status data for that user if it exists in the cached transient.
 	 *
 	 * @since 0.2.0
@@ -507,13 +507,13 @@ class WSUWP_A11y_Status {
 		// Display error message if the current user is not certified.
 		if ( ! self::is_user_certified() ) {
 			$class      = 'notice-error';
-			$message    = __( 'You need to take the WSU Accessiblity Training.', 'wsuwp-a11y-status' );
+			$message    = __( 'You need to take the WSU Accessibility Training.', 'wsuwp-a11y-status' );
 			$expiration = '';
 		} else {
 			// Display warning message the user's certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
 				$class      = 'notice-warning';
-				$message    = __( 'WSU Accessiblity Certification Expiring Soon.', 'wsuwp-a11y-status' );
+				$message    = __( 'WSU Accessibility Certification Expiring Soon.', 'wsuwp-a11y-status' );
 				$expiration = self::get_user_a11y_expiration_date();
 			} else {
 				return;
