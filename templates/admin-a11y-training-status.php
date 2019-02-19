@@ -36,7 +36,7 @@ if ( false !== $force_refresh && isset( $_GET['_wsuwp_a11y_refresh_nonce'] ) ) {
 }
 
 $force_refresh_url = wp_nonce_url( self_admin_url( 'users.php?page=' . WSUWP_A11y_Status::$slug . '&force-refresh=1' ), WSUWP_A11y_Status::$slug . '_force-refresh', '_wsuwp_a11y_refresh_nonce' );
-$a11y_status       = get_transient( 'a11y_status_wsuwp_a11y_status' );
+$users             = get_users( array( 'fields' => array( 'user_email' ) ) );
 ?>
 
 <div class="wrap wsuwp-a11y-status">
@@ -51,6 +51,7 @@ $a11y_status       = get_transient( 'a11y_status_wsuwp_a11y_status' );
 		<thead>
 			<tr>
 				<th scope="col" id="wsu-nid" class="manage-column column-wsu-nid column-primary">WSU NID</th>
+				<th scope="col" id="user-email" class="manage-column column-user-email">Email</th>
 				<th scope="col" id="a11y-status" class="manage-column column-a11y-status">A11y Training Status</th>
 				<th scope="col" id="a11y-expires" class="manage-column column-a11y-expires">Training Expiration</th>
 				<th scope="col" id="a11y-remaining" class="manage-column column-a11y-remaining">Time to Renew</th>
@@ -58,36 +59,29 @@ $a11y_status       = get_transient( 'a11y_status_wsuwp_a11y_status' );
 		</thead>
 		<tbody id="the-list">
 			<?php
-			foreach ( $a11y_status as $user => $status ) {
-				$expires      = '';
-				$remaining    = '';
-				$is_certified = 'None';
-				$row_class    = 'warning';
+			foreach ( $users as $user ) {
+				$user_nid     = implode( explode( '@', $user->user_email, -1 ) );
+				$is_certified = WSUWP_A11y_Status::is_user_certified( $user_nid );
+				$expires      = WSUWP_A11y_Status::get_user_a11y_expiration_date( $user_nid );
+				$remaining    = WSUWP_A11y_Status::get_user_a11y_time_to_expiration( $user_nid );
+				$row_class    = 'notice-success';
 
-				// If user is certified then populate the expiration details.
-				if ( 'False' !== $status['isCertified'] ) {
-					$expires_raw  = date_create_from_format( 'M j Y g:iA', $status['Expires'] );
-					$expires      = date_format( $expires_raw, get_option( 'date_format' ) );
-					$remaining    = human_time_diff( date_format( $expires_raw, 'U' ) );
-					$is_certified = 'Passing';
-
-					if ( false !== strpos( $remaining, 'months' ) || false !== strpos( $remaining, 'years' ) ) {
-						$is_less_than_one_month = false;
-					} else {
-						$is_less_than_one_month = true;
-					}
-
-					$row_class  = 'success';
-					$row_class .= ( $is_less_than_one_month ) ? ' less-than-one-month' : '';
+				if ( ! $is_certified ) {
+					$row_class = 'notice-error';
+				} elseif ( WSUWP_A11y_Status::is_user_a11y_lt_one_month( $user_nid ) ) {
+					$row_class = 'notice-warning';
 				}
 
 				?>
-				<tr id="user-<?php echo esc_attr( $user ); ?>" class="<?php echo esc_attr( $row_class ); ?>">
-					<td class="wsu-nid column-wsu-nid" data-colname="WSU NID"><?php echo esc_html( $user ); ?></td>
-					<td class="a11y-status column-a11y-status" data-colname="A11y Training Status"><?php echo esc_html( $is_certified ); ?></td>
+
+				<tr id="user-<?php echo esc_attr( $user_nid ); ?>" class="<?php echo esc_attr( $row_class ); ?>">
+					<td class="wsu-nid column-wsu-nid" data-colname="WSU NID"><?php echo esc_html( $user_nid ); ?></td>
+					<td class="user-email column-user-email" data-colname="Email"><a href="mailto:<?php echo esc_attr( $user->user_email ); ?>"><?php echo esc_html( $user->user_email ); ?></a></td>
+					<td class="a11y-status column-a11y-status" data-colname="A11y Training Status"><?php echo ( $is_certified ) ? 'Passing' : 'None'; ?></td>
 					<td class="a11y-expires column-a11y-expires" data-colname="Training Expiration"><?php echo esc_html( $expires ); ?></td>
 					<td class="a11y-remaining column-a11y-remaining" data-colname="Time to Renew"><?php echo esc_html( $remaining ); ?></td>
 				</tr>
+
 				<?php
 			}
 			?>
