@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.1.0';
+	protected $version = '0.2.0';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -93,7 +93,6 @@ class WSUWP_A11y_Status {
 	public static function activate() {
 		// Register a scheduled action only on activation.
 		if ( ! wp_next_scheduled( 'wsuwp_a11y_status_update' ) ) {
-			// @todo Define the interval in with settings.
 			wp_schedule_event( time(), 'hourly', 'wsuwp_a11y_status_update' );
 		}
 	}
@@ -104,7 +103,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function deactivate() {
-		// DEBUG: This is working. Deactivate & reactivate to flush the cache - more methods coming
+		// Clear the a11y status transient.
 		self::flush_transient_cache();
 
 		// Remove the scheduled event on plugin deactivation.
@@ -115,12 +114,43 @@ class WSUWP_A11y_Status {
 	 * Loads the WP API actions and hooks.
 	 *
 	 * @since 0.1.0
-	 *
-	 * @access public
 	 */
 	public function setup_hooks() {
+		add_action( 'admin_init', array( $this, 'set_properties' ) );
 		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
+	}
+
+	/**
+	 * Sets the WSU A11y Status plugin properties.
+	 *
+	 * Creates an array of usernames to feed to the API using the email
+	 * addresses of registered WP users on the current site. Also sets the API
+	 * endpoint URL.
+	 *
+	 * @todo Set the endpoint URL using plugin options.
+	 * @todo Allow manually adding additional usernames to check from plugin
+	 *       options via merge.
+	 *
+	 * @since 0.2.0
+	 */
+	public function set_properties() {
+		$wp_users = get_users( array( 'fields' => array( 'user_email' ) ) );
+
+		$usernames = array();
+		foreach ( $wp_users as $wp_user ) {
+			// Save only the email usernames (everything to the last `@` sign).
+			$usernames[] = implode( explode( '@', $wp_user->user_email, -1 ) );
+		}
+
+		// Define the WSU A11y Training status API endpoint.
+		$this->set_endpoint_props(
+			array(
+				'url'   => 'https://webserv.wsu.edu/accessibility/training/service',
+				'users' => $usernames,
+			)
+		);
+
 	}
 
 	/**
@@ -134,7 +164,7 @@ class WSUWP_A11y_Status {
 	 * }
 	 * @return void
 	 */
-	public function set_endpoint_props( $props ) {
+	private function set_endpoint_props( $props ) {
 		$defaults = array(
 			'url'   => $this->url,
 			'users' => $this->users,
@@ -146,10 +176,8 @@ class WSUWP_A11y_Status {
 			$props['users'] = array_map( 'trim', explode( ',', $props['users'] ) );
 		}
 
-		$props['users'] = array_map( 'sanitize_user', $props['users'] );
-
-		$this->url   = $props['url'];
-		$this->users = $props['users'];
+		$this->url   = esc_url_raw( $props['url'] );
+		$this->users = array_map( 'sanitize_user', $props['users'] );
 	}
 
 	/**
@@ -176,7 +204,7 @@ class WSUWP_A11y_Status {
 		// Try to get plugin details from the cache before checking the API.
 		$this->wsu_api_response = get_transient( 'a11y_status_' . self::$slug );
 
-		// If a cached value exists then return it and don't execute a new request.
+		// If a cached value exists, return it and don't execute a new request.
 		if ( false !== $this->wsu_api_response ) {
 			return $this->wsu_api_response;
 		}
