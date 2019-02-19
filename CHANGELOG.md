@@ -17,6 +17,19 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.2.0 (2019-02-18)
+
+### Added
+
+- User accessibility certification conditional check methods to return whether a user is certified and whether their certification expires in less than one month.
+- Methods to get user accessibility status data by email.
+- Dedicated setup class method to set the plugin properties, including defining
+the WSU Accessibility Training API endpoint properties.
+
+### Changed
+
+- Move endpoint property setup to the main plugin setup class.
+
 ## 0.1.0 (2019-02-15)
 
 ### Added
