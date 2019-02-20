@@ -120,6 +120,8 @@ class WSUWP_A11y_Status {
 		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
+		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
+		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
 	}
 
 	/**
@@ -537,6 +539,61 @@ class WSUWP_A11y_Status {
 			</p>
 		</div>
 		<?php
+	}
+
+	/**
+	 * Adds an A11y Status column to the user table on the Users screen.
+	 *
+	 * Callback method for the `manage_users_columns` filter. Adds a column to
+	 * display custom accessibility status data on the Users screen.
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param array $columns Required. An array of column name => label.
+	 * @return array An array of column name => label to modify the users table list columns.
+	 */
+	public function add_a11y_status_user_column( $columns ) {
+		$columns['a11y_status'] = __( 'A11y Status', 'wsuwp-a11y-status' );
+
+		return $columns;
+	}
+
+	/**
+	 * Manages the output of the custom A11y Status column in the Users table.
+	 *
+	 * Callback method for the `manage_users_custom_column` filter. For
+	 * accessibility training certified users it displays a message with the
+	 * remaining time until their certification expires, and for non-certified
+	 * users is displays "none."
+	 *
+	 * @since 0.3.0
+	 *
+	 * @param string $output      The custom column output. Defaults to empty.
+	 * @param string $column_name The name of the column to filter.
+	 * @param int    $user_id     The ID of the currently listed user.
+	 * @return string HTML message to output in the column row.
+	 */
+	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
+		if ( 'a11y_status' === $column_name ) {
+			$user       = get_userdata( $user_id );
+			$user_email = $user->user_email;
+
+			if ( ! self::is_user_certified( $user_email ) ) {
+				$output = '<span class="notice-error">None</span>';
+			} else {
+				$class   = ( self::is_user_a11y_lt_one_month( $user_email ) ) ? 'notice-warning' : 'notice-success';
+				$expires = self::get_user_a11y_time_to_expiration( $user_email );
+				$output  = sprintf(
+					'<span class="%1$s">Expires in %2$s</span>',
+					esc_attr( $class ),
+					esc_html( $expires )
+				);
+			}
+
+			return $output;
+		}
+
+		return $output;
 	}
 
 }
