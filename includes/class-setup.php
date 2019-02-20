@@ -260,13 +260,14 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return array|false The accessibility status data for the given user, or false if the data is not found.
+	 * @return array|object|false The accessibility status data for the given user, or a WP_Error object if no data was found, or false if the user is not found.
 	 */
 	public static function get_a11y_status_by_email( $user_email = '' ) {
 		$a11y_status = get_transient( 'a11y_status_wsuwp_a11y_status' );
 
 		if ( ! $a11y_status ) {
-			return false;
+			// WP Error object in the format: new WP_Error( 'error_code', 'Message', $optional_data )
+			return new WP_Error( 'no_a11y_data', __( 'No stored WSU A11y Status data.', 'wsuwp-a11y-status' ) );
 		}
 
 		if ( '' === $user_email ) {
@@ -300,10 +301,14 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user, or false if the data is not found or the user is not certified.
+	 * @return string|object|false The expiration date for the given user, or a WP_Error object if the data is not found, or false the user is not certified.
 	 */
 	public static function get_user_a11y_expiration_date( $user_email = '' ) {
 		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( is_wp_error( $user_status ) ) {
+			return $user_status;
+		}
 
 		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
 			$expires = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
@@ -326,10 +331,14 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return string|false The remaining time for the given user, or false if the data is not found or the user is not certified.
+	 * @return string|object|false The expiration date for the given user, or a WP_Error object if the data is not found, or false the user is not certified.
 	 */
 	public static function get_user_a11y_time_to_expiration( $user_email = '' ) {
 		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( is_wp_error( $user_status ) ) {
+			return $user_status;
+		}
 
 		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
 			$user_expiry_date   = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
@@ -347,10 +356,14 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return bool True if the user is certified, false if not or the data is not found.
+	 * @return bool|object True if the user is certified, false if not, and a WP_Error object if the data is not found.
 	 */
 	public static function is_user_certified( $user_email = '' ) {
 		$user_status = self::get_a11y_status_by_email( $user_email );
+
+		if ( is_wp_error( $user_status ) ) {
+			return $user_status;
+		}
 
 		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
 			return true;
@@ -365,10 +378,14 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return bool True if the user's certification expires in less than one month, false if not or the data is not found.
+	 * @return bool|object True if the user's certification expires in less than one month, false if not, and a WP_Error object if the data is not found.
 	 */
 	public static function is_user_a11y_lt_one_month( $user_email = '' ) {
 		$time_to_expiration = self::get_user_a11y_time_to_expiration( $user_email );
+
+		if ( is_wp_error( $time_to_expiration ) ) {
+			return $time_to_expiration;
+		}
 
 		if ( false !== strpos( $time_to_expiration, 'months' ) || false !== strpos( $time_to_expiration, 'years' ) ) {
 			return false;
@@ -505,13 +522,14 @@ class WSUWP_A11y_Status {
 	 */
 	public function user_a11y_status_notices() {
 		$training_link = 'http://go.wsu.edu/web-accessibility';
+		$is_certified  = self::is_user_certified();
 
 		// Display error message if the current user is not certified.
-		if ( ! self::is_user_certified() ) {
+		if ( false === $is_certified ) {
 			$class      = 'notice-error';
 			$message    = __( 'You need to take the WSU Accessibility Training.', 'wsuwp-a11y-status' );
 			$expiration = '';
-		} else {
+		} elseif ( true === $is_certified ) {
 			// Display warning message the user's certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
 				$class      = 'notice-warning';
@@ -520,6 +538,8 @@ class WSUWP_A11y_Status {
 			} else {
 				return;
 			}
+		} else {
+			return;
 		}
 		?>
 		<div class="notice <?php echo esc_attr( $class ); ?>">
@@ -575,12 +595,13 @@ class WSUWP_A11y_Status {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$user       = get_userdata( $user_id );
-			$user_email = $user->user_email;
+			$user         = get_userdata( $user_id );
+			$user_email   = $user->user_email;
+			$is_certified = self::is_user_certified( $user_email );
 
-			if ( ! self::is_user_certified( $user_email ) ) {
+			if ( false === $is_certified ) {
 				$output = '<span class="notice-error">None</span>';
-			} else {
+			} elseif ( true === $is_certified ) {
 				$class   = ( self::is_user_a11y_lt_one_month( $user_email ) ) ? 'notice-warning' : 'notice-success';
 				$expires = self::get_user_a11y_time_to_expiration( $user_email );
 				$output  = sprintf(
