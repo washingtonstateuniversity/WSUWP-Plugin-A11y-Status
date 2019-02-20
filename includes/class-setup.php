@@ -91,10 +91,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		// Register a scheduled action only on activation.
-		if ( ! wp_next_scheduled( 'wsuwp_a11y_status_update' ) ) {
-			wp_schedule_event( time(), 'hourly', 'wsuwp_a11y_status_update' );
-		}
+		// Nothing for now.
 	}
 
 	/**
@@ -105,9 +102,6 @@ class WSUWP_A11y_Status {
 	public static function deactivate() {
 		// Clear the a11y status transient.
 		self::flush_transient_cache();
-
-		// Remove the scheduled event on plugin deactivation.
-		wp_clear_scheduled_hook( 'wsuwp_a11y_status_update' );
 	}
 
 	/**
@@ -117,6 +111,7 @@ class WSUWP_A11y_Status {
 	 */
 	public function setup_hooks() {
 		add_action( 'admin_init', array( $this, 'set_properties' ) );
+		add_action( 'admin_init', array( $this, 'get_a11y_status_response' ), 20 );
 		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
