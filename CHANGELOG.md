@@ -17,6 +17,22 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.4.0 (2019-02-20)
+
+### Changed
+
+- Use an `admin_init` action hook to run the method that retrieves data from the API on every admin page load instead of once per hour. (The request method still only pings the API if the transient has expired.)
+
+### Added
+
+- Preliminary admin styles.
+- Description and build instructions in the plugin Readme file.
+- Error handling for get methods when no data is found. Instead of returning false the methods for getting user status info now return a WP_Error object if no data is found.
+
+### Removed
+
+- No longer using the WP cron scheduler to call the method that retrieves data from the API. It didn't work well with the method of storing the API results in a transient, leaving periods when the transient had expired but the cron job had yet to run.
+
 ## 0.3.0 (2019-02-19)
 
 ### Added
