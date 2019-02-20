@@ -46,6 +46,18 @@ $users             = get_users( array( 'fields' => array( 'user_email' ) ) );
 
 	<hr class="wp-header-end">
 
+	<?php
+	$data = WSUWP_A11y_Status::get_a11y_status_by_email( $users[1]->user_email );
+	if ( is_wp_error( $data ) ) {
+		printf(
+			/* translators: 1: the plugin name, 2: the error message */
+			__( '<div class="notice notice-error"><p>%1$s</p></div>', 'wsuwp-a11y-status' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			esc_html( $data->get_error_message() )
+		);
+		exit;
+	}
+	?>
+
 	<h2 class="screen-reader-text">Users list</h2>
 	<table class="wp-list-table widefat fixed striped users wsuwp-a11y-status">
 		<thead>
@@ -77,7 +89,7 @@ $users             = get_users( array( 'fields' => array( 'user_email' ) ) );
 				<tr id="user-<?php echo esc_attr( $user_nid ); ?>" class="<?php echo esc_attr( $row_class ); ?>">
 					<td class="wsu-nid column-wsu-nid" data-colname="WSU NID"><?php echo esc_html( $user_nid ); ?></td>
 					<td class="user-email column-user-email" data-colname="Email"><a href="mailto:<?php echo esc_attr( $user->user_email ); ?>"><?php echo esc_html( $user->user_email ); ?></a></td>
-					<td class="a11y-status column-a11y-status" data-colname="A11y Training Status"><?php echo ( $is_certified ) ? 'Passing' : 'None'; ?></td>
+					<td class="a11y-status column-a11y-status" data-colname="A11y Training Status"><?php echo ( true === $is_certified ) ? 'Passing' : 'None'; ?></td>
 					<td class="a11y-expires column-a11y-expires" data-colname="Training Expiration"><?php echo esc_html( $expires ); ?></td>
 					<td class="a11y-remaining column-a11y-remaining" data-colname="Time to Renew"><?php echo esc_html( $remaining ); ?></td>
 				</tr>
