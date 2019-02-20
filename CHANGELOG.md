@@ -17,6 +17,18 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.3.0 (2019-02-19)
+
+### Added
+
+- Filter hook methods to add an "A11y Status" column to the Users table list and display the time remaining to certification expiration for each user.
+- Display admin notices for logged-in users who are either not Accessibility certified or whose certification expires in less than one month.
+
+### Changed
+
+- Refactor the WSU Accessibility Training Status admin screen to use the new getter methods instead of querying the transient data directly.
+- Make the WSU Accessibility Training Status admin screen display a full list of registered site users instead of listing only users in the transient data, and add an email column.
+
 ## 0.2.0 (2019-02-18)
 
 ### Added
