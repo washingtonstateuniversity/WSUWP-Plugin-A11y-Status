@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.3.0';
+	protected $version = '0.4.0';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -537,7 +537,7 @@ class WSUWP_A11y_Status {
 			return;
 		}
 		?>
-		<div class="notice <?php echo esc_attr( $class ); ?>">
+		<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 			<p>
 				<strong><?php echo esc_html( $message ); ?></strong>
 				<?php
