@@ -114,6 +114,7 @@ class WSUWP_A11y_Status {
 		add_action( 'admin_init', array( $this, 'get_a11y_status_response' ), 20 );
 		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
+		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
 		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
@@ -461,7 +462,8 @@ class WSUWP_A11y_Status {
 				array( $this, 'display_a11y_status_dashboard' )
 			);
 
-			add_action( 'load-' . $hook, array( $this, 'load_a11y_status_dashboard_cb' ) );
+			// @deprecated May add back if we need anything specific to the A11y Status screen.
+			// add_action( 'load-' . $hook, array( $this, 'load_a11y_status_dashboard_cb' ) );
 
 			return true;
 		}
@@ -484,15 +486,6 @@ class WSUWP_A11y_Status {
 		 * @since 0.1.0
 		 */
 		include plugin_dir_path( __DIR__ ) . 'templates/admin-a11y-training-status.php';
-	}
-
-	/**
-	 * Adds the A11y Status plugin scripts to the admin dashboard page.
-	 *
-	 * @since 0.1.0
-	 */
-	public function load_a11y_status_dashboard_cb() {
-		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 	}
 
 	/**
