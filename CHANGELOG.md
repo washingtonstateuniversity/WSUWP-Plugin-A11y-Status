@@ -17,6 +17,12 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.4.1 (2019-02-22)
+
+### Fixed
+
+- Load admin styles on all admin pages. Admin enqueue style hook was set to fire only on the dedicated A11y Status admin screen, but the styles need to apply to the admin notice as well.
+
 ## 0.4.0 (2019-02-20)
 
 ### Changed
