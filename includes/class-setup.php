@@ -112,7 +112,6 @@ class WSUWP_A11y_Status {
 	public function setup_hooks() {
 		add_action( 'admin_init', array( $this, 'set_properties' ) );
 		add_action( 'admin_init', array( $this, 'get_a11y_status_response' ), 20 );
-		add_action( 'admin_menu', array( $this, 'a11y_status_menu' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
@@ -436,56 +435,6 @@ class WSUWP_A11y_Status {
 				esc_html( $message )
 			);
 		}
-	}
-
-	/**
-	 * Adds a new dashboard page for the A11y Status plugin with load hooks.
-	 *
-	 * This creates a new submenu under the Users section of the main admin
-	 * menu. It also adds a callback to the `load-{admin page}` hook that fires
-	 * whenever the new dashboard page is loaded. This function is a callback
-	 * for the `user_admin_menu` action. {@see https://codex.wordpress.org/Plugin_API/Action_Reference/admin_menu}.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return bool True if user menu added. False if user lacks permission.
-	 */
-	public function a11y_status_menu() {
-
-		if ( current_user_can( 'list_users' ) ) {
-			$hook = add_submenu_page(
-				'users.php',
-				'A11y Training Status',
-				'A11y Status',
-				'read',
-				self::$slug,
-				array( $this, 'display_a11y_status_dashboard' )
-			);
-
-			// @deprecated May add back if we need anything specific to the A11y Status screen.
-			// add_action( 'load-' . $hook, array( $this, 'load_a11y_status_dashboard_cb' ) );
-
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Retrieves the admin dashboard page template.
-	 *
-	 * This function is a callback for `add_dashboard_page()`, called in the
-	 * `$this->a11y_status_menu()` function.
-	 *
-	 * @since 0.1.0
-	 */
-	public function display_a11y_status_dashboard() {
-		/**
-		 * Loads the admin dashboard page.
-		 *
-		 * @since 0.1.0
-		 */
-		include plugin_dir_path( __DIR__ ) . 'templates/admin-a11y-training-status.php';
 	}
 
 	/**
