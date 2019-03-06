@@ -17,6 +17,35 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.5.0-alpha (:construction: WIP 2019-03-06)
+
+### Fixed
+
+- Use the `wp_login` action's WP_User object parameter to check user capabilities instead of `current_user_can()`, which is maybe not available when the login action fires.
+
+### Changed
+
+- :card_file_box: Save accessibility status user data in the WordPress user metadata instead of in a transient. Replace all calls to `get_` and `set_transient` to `get_` and `update_user_meta`.
+- :zap: Use the `wp_login` action hook instead of the `admin_init` hook to call the method that fetches data from the API and updates user data.
+- :recycle: Separate the method that fetches API data and updates site data into separate methods: one to handle fetching and returning API data and the other to update user metadata.
+- Set the API endpoint properties (the URL and users to check) from inside the fetch data update method instead of on login or admin init to allow for more easily performing updates on a per-user basis.
+- Require the "users" list for the API endpoint to be in array format.
+- :recycle: Update all `get_user_a11y_*` and `is_user_*` methods to use `get_user_meta()` and to check based on user ID instead of email.
+- Update the admin notice to present different messages for users with no certification, expired certification, and soon-to-expire certification.
+- Update the user list table A11y Status column to present different messages for users with no certification, expired certification, and soon-to-expire certification.
+
+### Added
+
+- Method to return the time remaining in a registered user's 30-day WSU Accessibility Training grace period.
+- Method to return (true or false) whether a user was certified at any time in the past (to help distinguish expired certification from no certification).
+- Save additional data to the "wsuwp_a11y_status" user metadata to record the date the API was last checked and whether or not the user has been certified in the past.
+- :art: Prototype some styles on the user list table A11y Status column.
+
+### Removed
+
+- Custom `wsuwp_a11y_status_update` action hook.
+- :fire: Admin screen filter methods and template that added a custom admin screen that is no longer needed. Using the default User list table instead.
+
 ## 0.4.1 (2019-02-22)
 
 ### Fixed
