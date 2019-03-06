@@ -10,13 +10,12 @@ WSUWP A11y (Accessibility) Status retrieves WSU Web Accessibility Training statu
 
 ### All users will see:
 
-- A warning notice in the WordPress admin area with a link to take the training if they are not WSU Accessibility certified.
+- A warning notice in the WordPress admin area with a link to take the training if they are not WSU Accessibility certified or if their certification has expired.
 - A caution notice in the WP admin area if their certification is due to expire in less than one (1) month, also with a link to take the training.
 
 ### Admin users will also see:
 
-- A new column in the users table list on the Users screen showing the WSU Accessibility Training status for each user: "None" for users that are not certified and the time remaining until required recertification for users that are.
-- A dedicated "A11y Status" screen under the WP admin Users menu that displays each registered user's certification status, expiration, and time remaining to recertification. The A11y Status screen also includes a Refresh Data button to manually retrieve the most recent data from the WSU Accessibility Training API.
+- An additional column in the users table list on the Users screen showing the WSU Accessibility Training status for each user: "None" for users that are not certified and the time remaining until required recertification for users that are.
 
 ## For Developers
 
@@ -46,7 +45,7 @@ git checkout -b new-branch-name
 
 The following commands will handle basic build functions. (Remove the `-s` flag to show additional debug info.)
 
-- `npm run build -s`: Remove old compiled files such as minified CSS, lint PHP and CSS, and then compile new versions.
-- `npm test -s`: Check all PHP and CSS files for coding standards compliance.
-- `npm run clean -s`: Remove old compiled files such as minified CSS.
-- `npm run style -s`: Compile CSS.
+- `npm run build`: Remove old compiled files such as minified CSS, lint PHP and CSS, and then compile new versions.
+- `npm test`: Check all PHP and CSS files for coding standards compliance.
+- `npm run clean`: Remove old compiled files such as minified CSS.
+- `npm run style`: Compile CSS.
