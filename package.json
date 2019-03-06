@@ -1,6 +1,6 @@
 {
   "name": "wsuwp-plugin-a11y-status",
-  "version": "0.4.1",
+  "version": "0.5.0",
   "repository": {
     "type": "git",
     "url": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status"
@@ -18,7 +18,7 @@
     "Firefox ESR"
   ],
   "scripts": {
-    "lint:php": "vendor/bin/phpcs -v --colors --extensions=php --ignore=\"*/vendor/*,*/node_modules/*\" --standard=phpcs.ruleset.xml *.php includes/ templates/",
+    "lint:php": "vendor/bin/phpcs -v --colors --extensions=php --ignore=\"*/vendor/*,*/node_modules/*\" --standard=phpcs.ruleset.xml *.php includes/",
     "lint:css": "stylelint \"src/_css/**/*.css\"",
     "clean": "rimraf {css/}",
     "style": "postcss src/_css/main.css --output css/main.css",
