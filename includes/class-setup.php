@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.4.1';
+	protected $version = '0.5.0-alpha';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -91,7 +91,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		// Nothing for now.
+		// @todo Fetch the API data on plugin activation.
 	}
 
 	/**
@@ -100,8 +100,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function deactivate() {
-		// Clear the a11y status transient.
-		self::flush_transient_cache();
+		// @todo Something.
 	}
 
 	/**
@@ -110,45 +109,11 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
-		add_action( 'admin_init', array( $this, 'set_properties' ) );
-		add_action( 'admin_init', array( $this, 'get_a11y_status_response' ), 20 );
+		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'wsuwp_a11y_status_update', array( $this, 'get_a11y_status_response' ) );
 		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
-	}
-
-	/**
-	 * Sets the WSU A11y Status plugin properties.
-	 *
-	 * Creates an array of usernames to feed to the API using the email
-	 * addresses of registered WP users on the current site. Also sets the API
-	 * endpoint URL.
-	 *
-	 * @todo Set the endpoint URL using plugin options.
-	 * @todo Allow manually adding additional usernames to check from plugin
-	 *       options via merge.
-	 *
-	 * @since 0.2.0
-	 */
-	public function set_properties() {
-		$wp_users = get_users( array( 'fields' => array( 'user_email' ) ) );
-
-		$usernames = array();
-		foreach ( $wp_users as $wp_user ) {
-			// Save only the email usernames (everything to the last `@` sign).
-			$usernames[] = implode( explode( '@', $wp_user->user_email, -1 ) );
-		}
-
-		// Define the WSU A11y Training status API endpoint.
-		$this->set_endpoint_props(
-			array(
-				'url'   => 'https://webserv.wsu.edu/accessibility/training/service',
-				'users' => $usernames,
-			)
-		);
-
 	}
 
 	/**
@@ -157,8 +122,8 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 *
 	 * @param $props {
-	 *     @type string       $url   Required. A valid API endpoint to check on WSU Accessibility Training status.
-	 *     @type string|array $users Required. One or more WSU Net IDs to check.
+	 *     @type string $url   Required. A valid API endpoint to check on WSU Accessibility Training status.
+	 *     @type array  $users Required. An associative array of one or more WSU Net IDs to check in the format WP_ID => WSU_NID.
 	 * }
 	 * @return void
 	 */
@@ -171,7 +136,9 @@ class WSUWP_A11y_Status {
 		$props = wp_parse_args( $props, $defaults );
 
 		if ( ! is_array( $props['users'] ) ) {
-			$props['users'] = array_map( 'trim', explode( ',', $props['users'] ) );
+			$this->error( 'Users list in `set_endpoint_props()` must be an array.' );
+
+			return false;
 		}
 
 		$this->url   = esc_url_raw( $props['url'] );
@@ -179,109 +146,168 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
-	 * Gets the WSU Accessibility Training status info from the WSU API.
+	 * Builds the list of username(s) (WSU IDs) to check.
 	 *
-	 * Connect to the API to retrieve info for a given user ID(s) in JSON
-	 * format and parse it.
+	 * Super Admins and Administrators -- or anyone with the capability to
+	 * access the admin Users screen -- will need to collect the accessibility
+	 * training status of all registered users. All other users should only
+	 * gather data from the API for themselves.
 	 *
-	 * @since 0.1.0
+	 * @since 0.5.0
 	 *
-	 * @return array|false Array of parsed JSON WSU API a11y status details or false if the request failed.
+	 * @param object $current_user A WP_User instance of the current user.
+	 * @return array An associative array of user_id => wsu_nid key-value pairs.
 	 */
-	public function get_a11y_status_response() {
+	private function get_usernames_list( $current_user ) {
 
-		// Try to get plugin details from the cache before checking the API.
-		$this->wsu_api_response = get_transient( 'a11y_status_' . self::$slug );
-
-		// If a cached value exists, return it and don't execute a new request.
-		if ( false !== $this->wsu_api_response ) {
-			return $this->wsu_api_response;
+		// Use WP_User object because current_user_can() isn't available yet.
+		if ( $current_user->allcaps['list_users'] ) {
+			// Add all users to the users array if current user is (super)admin.
+			$wp_users = get_users( array( 'fields' => array( 'ID', 'user_email' ) ) );
+		} else {
+			// Add only the current user to the users array if not an admin.
+			$wp_users[] = $current_user;
 		}
 
-		if ( empty( $this->users ) ) {
-			$this->error( 'WSU API Error: Please supply at least one WSU NID for the API query.' );
+		$usernames = array();
+		foreach ( $wp_users as $wp_user ) {
+			/*
+			 * @todo Add a check here to try getting the WSU ID from a user
+			 *       meta field (editable on the user profile page) before
+			 *       trying to build it ourselves out of the email address.
+			 *       This will allow specifiying the WSU ID for users not
+			 *       using a WSU email address.
+			 */
 
-			return false;
+			// Save only the email usernames (everything to the last `@` sign).
+			$usernames[ $wp_user->ID ] = implode( explode( '@', $wp_user->user_email, -1 ) );
 		}
 
-		// Preliminary checks completed; proceed with API request.
-		$response = array();
+		return $usernames;
+	}
 
-		foreach ( $this->users as $user ) :
+	/**
+	 * Updates one or more user's metadata with their WSU A11y Training status.
+	 *
+	 * A callback method for the `wp_login` action hook, which provides the user
+	 * login and WP_User object for a successfully authenticated user on login.
+	 * It is triggered when a users logs in by the `wp_signon()` function.
+	 * This calls the internal method to fetch data from the API and update the
+	 * user(s) metadata accordingly.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param string $user_login The authenticated user's login.
+	 * @param object $user       The WP_User object for the authenticated user.
+	 * @return array Associative array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
+	 */
+	public function update_a11y_status_usermeta( $user_login, $user ) {
 
-			// Build the request URI on a per-user basis.
-			$request_uri = sprintf( '%1$s?NID=%2$s', $this->url, $user );
+		// Define the WSU A11y Training status API endpoint.
+		$this->set_endpoint_props(
+			array(
+				'url'   => 'https://webserv.wsu.edu/accessibility/training/service',
+				'users' => $this->get_usernames_list( $user ),
+			)
+		);
 
-			$raw_response = wp_remote_get( esc_url_raw( $request_uri ) );
+		foreach ( $this->users as $user_id => $username ) {
+			/*
+			 * @todo Add a check so that for certified users we only fetch new
+			 * data when they're nearing expiration.
+			 */
 
-			if ( is_wp_error( $raw_response ) ) {
-				$this->error( $raw_response->get_error_message() );
+			// Fetch the accessibility training status data.
+			$user_status = $this->fetch_a11y_status_response( $this->url, $username );
 
-				return false;
-			}
+			// Save the accessibility training status to user metadata.
+			$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
 
-			$response_code = wp_remote_retrieve_response_code( $raw_response );
-
-			if ( 200 !== (int) $response_code ) {
-				$this->error( sprintf(
-					'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s',
-					esc_url_raw( $request_uri ),
-					$response_code
-				) );
-
-				return false;
-			}
-
-			$response = json_decode( wp_remote_retrieve_body( $raw_response ), true );
-
-			$this->wsu_api_response[ $user ] = array_shift( $response );
-
-		endforeach;
-
-		if ( ! is_wp_error( $this->wsu_api_response ) ) {
-			// Save results of a successful API call to a 12-hour transient cache.
-			set_transient( 'a11y_status_' . self::$slug, $this->wsu_api_response, 43200 );
 		}
 
 		return $this->wsu_api_response;
 	}
 
 	/**
+	 * Gets the WSU Accessibility Training status info from the WSU API.
+	 *
+	 * Connect to the API to retrieve info for given username(s) in JSON
+	 * format and parse it, then add several additional items to the resulting
+	 * array and return it. The returned array should include the following
+	 * key-value pairs:
+	 *
+	 * array (
+	 *     'isCertified'    => (string) "True" || "False",
+	 *     'Expires'        => (string, datetime in format `M j Y g:iA`) "Mar 7 2019 6:52PM",
+	 *     'trainingURL'    => (string) "https://url.to.wsu.accessibility.training/",
+	 *     'last_checked'   => (string, datetime in format `YYYY-MM-DD HH:MM:SS`) "2019-03-05 09:48:57",
+	 *     'ever_certified' => (bool) true || false,
+	 * )
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param string $url      The WSU Accessibility Training Status API url.
+	 * @param string $username The WSU NID of the user to retrieve data for.
+	 * @return array|false Array of accessibility training status data for the given username.
+	 */
+	private function fetch_a11y_status_response( $url, $username ) {
+
+		// Build the request URI on a per-user basis.
+		$request_uri = sprintf( '%1$s?NID=%2$s', $url, $username );
+
+		$raw_response = wp_remote_get( esc_url_raw( $request_uri ) );
+
+		if ( is_wp_error( $raw_response ) ) {
+			$this->error( $raw_response->get_error_message() );
+
+			return false;
+		}
+
+		$response_code = wp_remote_retrieve_response_code( $raw_response );
+
+		if ( 200 !== (int) $response_code ) {
+			$this->error( sprintf(
+				'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s',
+				esc_url_raw( $request_uri ),
+				$response_code
+			) );
+
+			return false;
+		}
+
+		$response = json_decode( wp_remote_retrieve_body( $raw_response ), true );
+
+		$user_status = array_shift( $response );
+
+		// Save date of last API check.
+		$user_status['last_checked'] = current_time( 'mysql' );
+
+		// Save user metadata to track if a user was ever certified in the past.
+		if ( 'True' === $user_status['isCertified'] ) {
+			$user_status['ever_certified'] = true;
+		}
+
+		return $user_status;
+	}
+
+	/**
 	 * Gets the full a11y certification status of the given user.
 	 *
-	 * Takes an email address or WSU NID and retrieves the full accessibility
-	 * status data for that user if it exists in the cached transient.
+	 * Takes a WordPress user ID and retrieves the full WSU accessibility
+	 * training status data for that user if it exists in the user metadata.
 	 *
-	 * @since 0.2.0
+	 * @since 0.5.0
 	 *
-	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return array|object|false The accessibility status data for the given user, or a WP_Error object if no data was found, or false if the user is not found.
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return array|false The accessibility status data for the given user or false if the user data is not found.
 	 */
-	public static function get_a11y_status_by_email( $user_email = '' ) {
-		$a11y_status = get_transient( 'a11y_status_wsuwp_a11y_status' );
+	public static function get_user_a11y_status( $user_id = '' ) {
+		$user_id = ( '' !== $user_id ) ? absint( $user_id ) : get_current_user_id();
 
-		if ( ! $a11y_status ) {
-			// WP Error object in the format: new WP_Error( 'error_code', 'Message', $optional_data )
-			return new WP_Error( 'no_a11y_data', __( 'No stored WSU A11y Status data.', 'wsuwp-a11y-status' ) );
-		}
+		$a11y_status = get_user_meta( $user_id, self::$slug, true );
 
-		if ( '' === $user_email ) {
-			$current_user = wp_get_current_user();
-
-			if ( ! $current_user->exists() ) {
-				return false;
-			}
-
-			$user_email = implode( explode( '@', $current_user->user_email, -1 ) );
-		}
-
-		// Get the email username if given a full email string.
-		if ( false !== strpos( $user_email, '@' ) ) {
-			$user_email = implode( explode( '@', $user_email, -1 ) );
-		}
-
-		if ( array_key_exists( $user_email, $a11y_status ) ) {
-			return $a11y_status[ $user_email ];
+		if ( ! empty( $a11y_status ) ) {
+			return $a11y_status;
 		}
 
 		return false;
@@ -295,17 +321,13 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return string|object|false The expiration date for the given user, or a WP_Error object if the data is not found, or false the user is not certified.
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
 	 */
-	public static function get_user_a11y_expiration_date( $user_email = '' ) {
-		$user_status = self::get_a11y_status_by_email( $user_email );
+	public static function get_user_a11y_expiration_date( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( is_wp_error( $user_status ) ) {
-			return $user_status;
-		}
-
-		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
 			$expires = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
 
 			return date_format( $expires, get_option( 'date_format' ) );
@@ -325,17 +347,13 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return string|object|false The expiration date for the given user, or a WP_Error object if the data is not found, or false the user is not certified.
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
 	 */
-	public static function get_user_a11y_time_to_expiration( $user_email = '' ) {
-		$user_status = self::get_a11y_status_by_email( $user_email );
+	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( is_wp_error( $user_status ) ) {
-			return $user_status;
-		}
-
-		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
 			$user_expiry_date   = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
 			$time_to_expiration = human_time_diff( date_format( $user_expiry_date, 'U' ) );
 
@@ -346,21 +364,71 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Determines time remaining in a user's 30-day A11y Training grace period.
+	 *
+	 * Returns the number of days remaining in a user's 30-day grace period,
+	 * calculated by checking the difference between the current date and the
+	 * user's WP registration date. Returns the string "0 days" if the grace
+	 * period has expired by any number of days.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return string|false A string containing the number of days remaining in human-readable format or "0 days" if the period has expired. False if no data found or user is certified.
+	 */
+	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
+
+		if ( empty( $user_status ) || 'False' === $user_status['isCertified'] ) {
+			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
+
+			$registration = date_create( $wp_user->user_registered );
+			$diff         = $registration->diff( date_create() );
+
+			if ( 1 <= $diff->m ) {
+				// Grace period of one month has passed.
+				$days_remaining = '0 days';
+			} else {
+				// The days remaining in the grace period.
+				$days_remaining = human_time_diff( date_format( $registration, 'U' ), current_time( 'timestamp' ) );
+			}
+
+			return $days_remaining;
+		}
+
+		return false;
+	}
+
+	/**
 	 * Determines whether a given user is A11y Training certified.
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return bool|object True if the user is certified, false if not, and a WP_Error object if the data is not found.
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return bool True if the user is certified, false if not or if the data is not found.
 	 */
-	public static function is_user_certified( $user_email = '' ) {
-		$user_status = self::get_a11y_status_by_email( $user_email );
+	public static function is_user_certified( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( is_wp_error( $user_status ) ) {
-			return $user_status;
+		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
+			return true;
 		}
 
-		if ( $user_status && 'False' !== $user_status['isCertified'] ) {
+		return false;
+	}
+
+	/**
+	 * Determines whether a user has been A11y Training certified in the past.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return bool True if the user has ever been certified and false if not.
+	 */
+	public static function was_user_certified( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
+
+		if ( ! empty( $user_status['ever_certified'] ) ) {
 			return true;
 		}
 
@@ -372,36 +440,37 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.2.0
 	 *
-	 * @param string $user_email Optional. The email address or WSU NID of a user to check. Defaults to the current user.
-	 * @return bool|object True if the user's certification expires in less than one month, false if not, and a WP_Error object if the data is not found.
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return bool True if the user's certification expires in less than one month and false if not, or if the data is not found.
 	 */
-	public static function is_user_a11y_lt_one_month( $user_email = '' ) {
-		$time_to_expiration = self::get_user_a11y_time_to_expiration( $user_email );
+	public static function is_user_a11y_lt_one_month( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( is_wp_error( $time_to_expiration ) ) {
-			return $time_to_expiration;
-		}
+		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
+			$expiry = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
+			$diff   = $expiry->diff( date_create() );
 
-		if ( false !== strpos( $time_to_expiration, 'months' ) || false !== strpos( $time_to_expiration, 'years' ) ) {
-			return false;
-		}
-
-		return true;
-	}
-
-	/**
-	 * Deletes the `a11y_status_{plugin-slug}` transient to flush the cache.
-	 *
-	 * @since 0.1.0
-	 *
-	 * @return bool True if successful, false otherwise or if transient doesn't exist.
-	 */
-	public static function flush_transient_cache() {
-		if ( get_transient( 'a11y_status_' . self::$slug ) ) {
-			$deleted = delete_transient( 'a11y_status_' . self::$slug );
+			if ( 1 > $diff->m ) {
+				return true;
+			}
 		}
 
 		return false;
+	}
+
+	/**
+	 * Deletes the 'wsuwp_a11y_status' usermeta for the given user.
+	 *
+	 * @since 0.5.0
+	 *
+	 * @param int $user_id The WP user ID of the user to delete metadata for.
+	 * @return bool True if successful, false if not.
+	 */
+	public static function flush_a11y_status_usermeta( $user_id ) {
+
+		$deleted = delete_user_meta( $user_id, self::$slug );
+
+		return $deleted;
 	}
 
 	/**
@@ -461,37 +530,58 @@ class WSUWP_A11y_Status {
 		$training_link = 'http://go.wsu.edu/web-accessibility';
 		$is_certified  = self::is_user_certified();
 
-		// Display error message if the current user is not certified.
-		if ( false === $is_certified ) {
-			$class      = 'notice-error';
-			$message    = __( 'You need to take the WSU Accessibility Training.', 'wsuwp-a11y-status' );
-			$expiration = '';
-		} elseif ( true === $is_certified ) {
-			// Display warning message the user's certification expires soon.
+		// Build the messages for uncertified, expired certification, and soon-to-expire certification.
+		if ( false === $is_certified ) :
+
+			$class = 'notice-error';
+
+			if ( self::was_user_certified() ) {
+				// User certification expired.
+				$message    = __( 'Please renew your WSU Accessibility Training certification.', 'wsuwp-a11y-status' );
+				$expiration = sprintf(
+					/* translators: 1: the human readble time remaining; 2: the expiration date */
+					__( 'Your certification expired %1$s ago, on %2$s.', 'wsuwp-a11y-status' ),
+					self::get_user_a11y_time_to_expiration(),
+					self::get_user_a11y_expiration_date()
+				);
+			} else {
+				// User not certified now or ever.
+				$message    = __( 'Please take the WSU Accessibility Training.', 'wsuwp-a11y-status' );
+				$expiration = sprintf(
+					/* translators: 1: the human readble time remaining; 2: the expiration date */
+					__( 'You have %1$s remaining to complete the WSU Accessibility Training certification.', 'wsuwp-a11y-status' ),
+					self::get_user_a11y_grace_period_remaining()
+				);
+			}
+
+		elseif ( true === $is_certified ) :
+
+			// User certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
 				$class      = 'notice-warning';
-				$message    = __( 'WSU Accessibility Certification Expiring Soon.', 'wsuwp-a11y-status' );
-				$expiration = self::get_user_a11y_expiration_date();
+				$message    = __( 'WSU Accessibility Training certification expiring soon.', 'wsuwp-a11y-status' );
+				$expiration = sprintf(
+					/* translators: 1: the human readble time remaining; 2: the expiration date */
+					__( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ),
+					self::get_user_a11y_time_to_expiration(),
+					self::get_user_a11y_expiration_date()
+				);
 			} else {
+				// Nothing if the certification lasts for more than one month.
 				return;
 			}
-		} else {
+
+		else :
+
 			return;
-		}
+
+		endif;
 		?>
+
 		<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 			<p>
 				<strong><?php echo esc_html( $message ); ?></strong>
-				<?php
-				if ( '' !== $expiration ) {
-					printf(
-						/* translators: 1: the human readble time remaining; 2: the expiration date */
-						__( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
-						esc_html( self::get_user_a11y_time_to_expiration() ),
-						esc_html( $expiration )
-					);
-				}
-				?>
+				<?php echo esc_html( $expiration ); ?>
 				<strong><a href="<?php echo esc_url( $training_link ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
 			</p>
 		</div>
@@ -532,23 +622,27 @@ class WSUWP_A11y_Status {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$user         = get_userdata( $user_id );
-			$user_email   = $user->user_email;
-			$is_certified = self::is_user_certified( $user_email );
+			$is_certified = self::is_user_certified( $user_id );
 
 			if ( false === $is_certified ) {
-				$output = '<span class="notice-error">None</span>';
+				if ( self::was_user_certified( $user_id ) ) {
+					$expired = self::get_user_a11y_time_to_expiration( $user_id );
+					$output  = sprintf(
+						'<span class="dashicons-before dashicons-warning notice-error">Expired %1$s ago</span>',
+						esc_html( $expired )
+					);
+				} else {
+					$output = '<span class="dashicons-before dashicons-no notice-error">None</span>';
+				}
 			} elseif ( true === $is_certified ) {
-				$class   = ( self::is_user_a11y_lt_one_month( $user_email ) ) ? 'notice-warning' : 'notice-success';
-				$expires = self::get_user_a11y_time_to_expiration( $user_email );
+				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
+				$expires = self::get_user_a11y_time_to_expiration( $user_id );
 				$output  = sprintf(
-					'<span class="%1$s">Expires in %2$s</span>',
+					'<span class="dashicons-before dashicons%1$s">Expires in %2$s</span>',
 					esc_attr( $class ),
 					esc_html( $expires )
 				);
 			}
-
-			return $output;
 		}
 
 		return $output;
