@@ -667,22 +667,28 @@ class WSUWP_A11y_Status {
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
 			$is_certified = self::is_user_certified( $user_id );
+			$last_checked = self::get_user_a11y_status( $user_id )['last_checked'];
 
 			if ( false === $is_certified ) {
 				if ( self::was_user_certified( $user_id ) ) {
 					$expired = self::get_user_a11y_time_to_expiration( $user_id );
 					$output  = sprintf(
-						'<span class="dashicons-before dashicons-warning notice-error">Expired %1$s ago</span>',
+						'<span title="Updated %1$s" class="dashicons-before dashicons-warning notice-error">Expired %2$s ago</span>',
+						esc_attr( $last_checked ),
 						esc_html( $expired )
 					);
 				} else {
-					$output = '<span class="dashicons-before dashicons-no notice-error">None</span>';
+					$output = sprintf(
+						'<span title="Updated %1$s" class="dashicons-before dashicons-no notice-error">None</span>',
+						esc_attr( $last_checked )
+					);
 				}
 			} elseif ( true === $is_certified ) {
 				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
 				$expires = self::get_user_a11y_time_to_expiration( $user_id );
 				$output  = sprintf(
-					'<span class="dashicons-before dashicons%1$s">Expires in %2$s</span>',
+					'<span title="Updated %1$s" class="dashicons-before dashicons%2$s">Expires in %3$s</span>',
+					esc_attr( $last_checked ),
 					esc_attr( $class ),
 					esc_html( $expires )
 				);
