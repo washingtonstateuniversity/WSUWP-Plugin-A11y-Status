@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.5.0-alpha';
+	protected $version = '0.6.0';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -110,10 +110,15 @@ class WSUWP_A11y_Status {
 	 */
 	public function setup_hooks() {
 		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
-		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
+		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
+		add_filter( 'user_row_actions', array( $this, 'add_a11y_status_user_row_action' ), 10, 2 );
+		add_filter( 'bulk_actions-users', array( $this, 'add_a11y_status_user_bulk_action' ), 10, 1 );
+		add_filter( 'handle_bulk_actions-users', array( $this, 'handle_a11y_status_bulk_actions' ), 10, 3 );
 	}
 
 	/**
@@ -224,6 +229,28 @@ class WSUWP_A11y_Status {
 			$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
 
 		}
+
+		return $this->wsu_api_response;
+	}
+
+	/**
+	 * Updates an individual user's metadata with their WSU A11y Training status.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param int $user_id The WP user ID of the user to update.
+	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
+	 */
+	public function update_a11y_status_by_user_id( $user_id ) {
+		$api_url  = 'https://webserv.wsu.edu/accessibility/training/service';
+		$wp_user  = get_user_by( 'id', $user_id );
+		$username = implode( explode( '@', $wp_user->user_email, -1 ) );
+
+		// Fetch the accessibility training status data.
+		$user_status = $this->fetch_a11y_status_response( $api_url, $username );
+
+		// Save the accessibility training status to user metadata.
+		$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
 
 		return $this->wsu_api_response;
 	}
@@ -526,7 +553,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @return void
 	 */
-	public function user_a11y_status_notices() {
+	public function user_a11y_status_notice__remind() {
 		$training_link = 'http://go.wsu.edu/web-accessibility';
 		$is_certified  = self::is_user_certified();
 
@@ -589,6 +616,62 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Displays an admin notice following a successful a11y status data refresh.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return void
+	 */
+	public function user_a11y_status_notice__action() {
+		// phpcs:disable WordPress.Security.NonceVerification.NoNonceVerification
+		if ( ! isset( $_REQUEST['action'] ) ) {
+			return;
+		}
+
+		$messages = array();
+
+		if ( 'update_a11y_status' === $_REQUEST['action'] ) {
+			$messages[] = array(
+				'class' => 'notice-success',
+				'text'  => __( 'Updated WSU Accessibility Training status info.', 'wsuwp-a11y-status' ),
+			);
+		}
+
+		if ( 'update_a11y_status_selected' === $_REQUEST['action'] ) {
+			if ( 0 < $_REQUEST['success'] ) {
+				$messages[] = array(
+					'class' => 'notice-success',
+					'text'  => sprintf(
+						/* translators: 1: the number of users updated in integer format */
+						__( 'Updated WSU Accessibility Training status info for %1$s users.', 'wsuwp-a11y-status' ),
+						absint( $_REQUEST['success'] )
+					),
+				);
+			}
+
+			if ( 0 < $_REQUEST['fail'] ) {
+				$messages[] = array(
+					'class' => 'notice-error',
+					'text'  => sprintf(
+						/* translators: 1: the number of users updated in integer format */
+						__( 'WSU Accessibility Training status update failed for %1$s users.', 'wsuwp-a11y-status' ),
+						absint( $_REQUEST['fail'] )
+					),
+				);
+			}
+		}
+		// phpcs:enable
+
+		foreach ( $messages as $message ) {
+			printf(
+				'<div class="wsuwp-a11y-status notice is-dismissible %1$s"><p>%2$s</p></div>',
+				esc_attr( $message['class'] ),
+				esc_html( $message['text'] )
+			);
+		}
+	}
+
+	/**
 	 * Adds an A11y Status column to the user table on the Users screen.
 	 *
 	 * Callback method for the `manage_users_columns` filter. Adds a column to
@@ -623,22 +706,28 @@ class WSUWP_A11y_Status {
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
 			$is_certified = self::is_user_certified( $user_id );
+			$last_checked = self::get_user_a11y_status( $user_id )['last_checked'];
 
 			if ( false === $is_certified ) {
 				if ( self::was_user_certified( $user_id ) ) {
 					$expired = self::get_user_a11y_time_to_expiration( $user_id );
 					$output  = sprintf(
-						'<span class="dashicons-before dashicons-warning notice-error">Expired %1$s ago</span>',
+						'<span title="Updated %1$s" class="dashicons-before dashicons-warning notice-error">Expired %2$s ago</span>',
+						esc_attr( $last_checked ),
 						esc_html( $expired )
 					);
 				} else {
-					$output = '<span class="dashicons-before dashicons-no notice-error">None</span>';
+					$output = sprintf(
+						'<span title="Updated %1$s" class="dashicons-before dashicons-no notice-error">None</span>',
+						esc_attr( $last_checked )
+					);
 				}
 			} elseif ( true === $is_certified ) {
 				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
 				$expires = self::get_user_a11y_time_to_expiration( $user_id );
 				$output  = sprintf(
-					'<span class="dashicons-before dashicons%1$s">Expires in %2$s</span>',
+					'<span title="Updated %1$s" class="dashicons-before dashicons%2$s">Expires in %3$s</span>',
+					esc_attr( $last_checked ),
 					esc_attr( $class ),
 					esc_html( $expires )
 				);
@@ -646,6 +735,134 @@ class WSUWP_A11y_Status {
 		}
 
 		return $output;
+	}
+
+	/**
+	 * Adds an "Update A11y" link to each list of user actions on the Users screen.
+	 *
+	 * Callback method for the `user_row_actions` filter hook. This adds an
+	 * immediate action link to the list of action links displayed in each row
+	 * of the WP Users list table.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string[] $actions     An array of action links to be displayed. Default 'Edit', 'Delete' for single site and 'Edit', 'Remove' for multisite.
+	 * @param WP_User  $user_object A WP_User object for the currently listed user.
+	 * @return string[] The modified array of action links to be displayed.
+	 */
+	public function add_a11y_status_user_row_action( $actions, $user_object ) {
+		if ( current_user_can( 'list_users' ) ) {
+
+			$update_uri = wp_nonce_url( add_query_arg( array(
+				'action'  => 'update_a11y_status',
+				'user_id' => $user_object->ID,
+			) ), 'update_a11y_' . $user_object->ID );
+
+			$actions['update_a11y_status'] = '<a class="dashicons-before dashicons-update" href="' . esc_url( $update_uri ) . '">' . esc_html__( 'A11y', 'wsuwp-a11y-status' ) . ' <span class="screen-reader-text">(' . esc_html__( 'Refresh accessibility status', 'wsuwp-a11y-status' ) . ')</a>';
+		}
+
+		return $actions;
+	}
+
+	/**
+	 * Adds an option to the bulk actions dropdown element on the Users screen.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string[] $actions An array of bulk action options to be displayed. Default 'Edit', 'Delete' for single site and 'Edit', 'Remove' for multisite.
+	 * @return string[] The modified array of builk action options to be displayed.
+	 */
+	public function add_a11y_status_user_bulk_action( $actions ) {
+		$actions['update_a11y_status_selected'] = __( 'Refresh A11y Status', 'wsuwp-a11y-statis' );
+
+		return $actions;
+	}
+
+	/**
+	 * Routes actions based on the "action" query variable.
+	 *
+	 * Called on the `admin_init` hook, this will call the WSUWP_A11y_Status
+	 * class update_a11y_status_by_user_id() method for the requested user ID
+	 * to update that user's WSU accessibility training user metadata.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
+	 */
+	public function handle_a11y_status_actions() {
+
+		if ( ! isset( $_REQUEST['action'] ) ) {
+			return;
+		}
+
+		$current_user = ( is_user_logged_in() ) ? wp_get_current_user() : null;
+
+		if ( 'update_a11y_status' === $_REQUEST['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.NoNonceVerification
+			// Set the user ID of the user to be updated.
+			$user_id = ( isset( $_REQUEST['user_id'] ) ) ? absint( $_REQUEST['user_id'] ) : 0;
+
+			// Check permissions. Non-admins cannot update other users' information.
+			if ( $current_user->ID === $user_id && ! current_user_can( 'list_users' ) ) {
+				wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+			}
+
+			// Check the nonce.
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'update_a11y_' . $user_id ) ) {
+				wp_die();
+			}
+
+			// Checks completed, go ahead and update the user's a11y status data.
+			$updated = $this->update_a11y_status_by_user_id( $user_id );
+		}
+
+		return $this->wsu_api_response;
+	}
+
+	/**
+	 * Handles a11y status bulk actions from the Users screen.
+	 *
+	 * A callback method for the `handle_bulk_actions-{$screen}` filter. This
+	 * filter expects the redirect link to be modified, with success or
+	 * failure feedback from the action to be used to display feedback to the
+	 * user.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $redirect_url The redirect URL.
+	 * @param string $doaction     The action being taken.
+	 * @param string $user_ids     An array of user IDs matching the selected users.
+	 * @return string The modified redirect URL.
+	 */
+	public function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) {
+		// Return early if not the a11y action.
+		if ( 'update_a11y_status_selected' !== $doaction ) {
+			return $redirect_url;
+		}
+
+		// Check permissions. Non-admins cannot update other users' information.
+		if ( ! current_user_can( 'list_users' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+		}
+
+		// Perform an update for each selected user and count successes.
+		$successful = 0;
+		foreach ( $user_ids as $user_id ) {
+			// Checks completed, go ahead and update the user's a11y status data.
+			$updated = $this->update_a11y_status_by_user_id( absint( $user_id ) );
+
+			if ( false !== $updated ) {
+				$successful++;
+			}
+		}
+		$unsuccessful = count( $user_ids ) - $successful;
+
+		$redirect_url = add_query_arg( array(
+			'action'  => 'update_a11y_status_selected',
+			'success' => $successful,
+			'fail'    => $unsuccessful,
+		), $redirect_url );
+
+		return $redirect_url;
 	}
 
 }

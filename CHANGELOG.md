@@ -17,7 +17,25 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 0.5.0-alpha (:construction: WIP 2019-03-06)
+## 0.6.0 (:construction: WIP 2019-03-08)
+
+### Fixed
+
+- Several phpcs standards issues.
+
+### Added
+
+- Methods to add a bulk action option on the Users list table bulk actions dropdown field to refresh accessibility status data from the API for all selected users and to execute that bulk refresh.
+- A title attribute to the "A11y Status" column data in the Users list table to provide the date and time the data was last updated.
+- Method to update an individual user's metadata with their WSU Accessibility Training status from the API as needed.
+- An "immediate action" link in the list of action links displayed for each user row in the WP Users list table that triggers a manual refresh of that user's accessibility training status, along with a method to handle that refresh. The handler validates the request then calls the update individual user metadata method.
+- An admin notice that displays after successfully refreshing a user's accessibility status metadata.
+
+### Changed
+
+- Consolidated all action-related admin notices into one callback method to display success and failure messages for individual and bulk accessibility status update actions.
+
+## 0.5.0 (2019-03-06)
 
 ### Fixed
 
