@@ -110,6 +110,7 @@ class WSUWP_A11y_Status {
 	 */
 	public function setup_hooks() {
 		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
+		add_action( 'user_register', array( $this, 'update_a11y_status_by_user_id' ), 10, 1 );
 		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
