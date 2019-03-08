@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.5.0-alpha';
+	protected $version = '0.6.0';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
