@@ -111,11 +111,14 @@ class WSUWP_A11y_Status {
 	public function setup_hooks() {
 		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
 		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
-		add_action( 'admin_notices', array( $this, 'user_a11y_status_notices' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
 		add_filter( 'user_row_actions', array( $this, 'add_a11y_status_user_row_action' ), 10, 2 );
+		add_filter( 'bulk_actions-users', array( $this, 'add_a11y_status_user_bulk_action' ), 10, 1 );
+		add_filter( 'handle_bulk_actions-users', array( $this, 'handle_a11y_status_bulk_actions' ), 10, 3 );
 	}
 
 	/**
@@ -550,7 +553,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @return void
 	 */
-	public function user_a11y_status_notices() {
+	public function user_a11y_status_notice__remind() {
 		$training_link = 'http://go.wsu.edu/web-accessibility';
 		$is_certified  = self::is_user_certified();
 
@@ -619,16 +622,52 @@ class WSUWP_A11y_Status {
 	 *
 	 * @return void
 	 */
-	public function a11y_status_action_notice__success() {
-		if ( ! isset( $_REQUEST['action'] ) ) { // phpcs:ignore WordPress.Security.NonceVerification.NoNonceVerification
+	public function user_a11y_status_notice__action() {
+		// phpcs:disable WordPress.Security.NonceVerification.NoNonceVerification
+		if ( ! isset( $_REQUEST['action'] ) ) {
 			return;
 		}
 
-		if ( 'update_a11y_status' === $_REQUEST['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.NoNonceVerification
-			$message = __( 'Updated WSU Accessibility Training status info', 'wsuwp-a11y-status' );
-			printf( '<div class="wsuwp-a11y-status notice notice-success is-dismissible"><p>%1$s</p></div>', esc_html( $message ) );
-		} else {
-			return;
+		$messages = array();
+
+		if ( 'update_a11y_status' === $_REQUEST['action'] ) {
+			$messages[] = array(
+				'class' => 'notice-success',
+				'text'  => __( 'Updated WSU Accessibility Training status info.', 'wsuwp-a11y-status' ),
+			);
+		}
+
+		if ( 'update_a11y_status_selected' === $_REQUEST['action'] ) {
+			if ( 0 < $_REQUEST['success'] ) {
+				$messages[] = array(
+					'class' => 'notice-success',
+					'text'  => sprintf(
+						/* translators: 1: the number of users updated in integer format */
+						__( 'Updated WSU Accessibility Training status info for %1$s users.', 'wsuwp-a11y-status' ),
+						absint( $_REQUEST['success'] )
+					),
+				);
+			}
+
+			if ( 0 < $_REQUEST['fail'] ) {
+				$messages[] = array(
+					'class' => 'notice-error',
+					'text'  => sprintf(
+						/* translators: 1: the number of users updated in integer format */
+						__( 'WSU Accessibility Training status update failed for %1$s users.', 'wsuwp-a11y-status' ),
+						absint( $_REQUEST['fail'] )
+					),
+				);
+			}
+		}
+		// phpcs:enable
+
+		foreach ( $messages as $message ) {
+			printf(
+				'<div class="wsuwp-a11y-status notice is-dismissible %1$s"><p>%2$s</p></div>',
+				esc_attr( $message['class'] ),
+				esc_html( $message['text'] )
+			);
 		}
 	}
 
@@ -726,6 +765,20 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Adds an option to the bulk actions dropdown element on the Users screen.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string[] $actions An array of bulk action options to be displayed. Default 'Edit', 'Delete' for single site and 'Edit', 'Remove' for multisite.
+	 * @return string[] The modified array of builk action options to be displayed.
+	 */
+	public function add_a11y_status_user_bulk_action( $actions ) {
+		$actions['update_a11y_status_selected'] = __( 'Refresh A11y Status', 'wsuwp-a11y-statis' );
+
+		return $actions;
+	}
+
+	/**
 	 * Routes actions based on the "action" query variable.
 	 *
 	 * Called on the `admin_init` hook, this will call the WSUWP_A11y_Status
@@ -760,13 +813,56 @@ class WSUWP_A11y_Status {
 
 			// Checks completed, go ahead and update the user's a11y status data.
 			$updated = $this->update_a11y_status_by_user_id( $user_id );
-
-			if ( false !== $updated ) {
-				add_action( 'admin_notices', array( $this, 'a11y_status_action_notice__success' ) );
-			}
 		}
 
-		return $updated;
+		return $this->wsu_api_response;
+	}
+
+	/**
+	 * Handles a11y status bulk actions from the Users screen.
+	 *
+	 * A callback method for the `handle_bulk_actions-{$screen}` filter. This
+	 * filter expects the redirect link to be modified, with success or
+	 * failure feedback from the action to be used to display feedback to the
+	 * user.
+	 *
+	 * @since 0.6.0
+	 *
+	 * @param string $redirect_url The redirect URL.
+	 * @param string $doaction     The action being taken.
+	 * @param string $user_ids     An array of user IDs matching the selected users.
+	 * @return string The modified redirect URL.
+	 */
+	public function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) {
+		// Return early if not the a11y action.
+		if ( 'update_a11y_status_selected' !== $doaction ) {
+			return $redirect_url;
+		}
+
+		// Check permissions. Non-admins cannot update other users' information.
+		if ( ! current_user_can( 'list_users' ) ) {
+			wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+		}
+
+		// Perform an update for each selected user and count successes.
+		$successful = 0;
+		foreach ( $user_ids as $user_id ) {
+			// Checks completed, go ahead and update the user's a11y status data.
+			$updated = $this->update_a11y_status_by_user_id( absint( $user_id ) );
+
+			if ( false !== $updated ) {
+				$successful++;
+			}
+		}
+		$unsuccessful = count( $user_ids ) - $successful;
+
+		$redirect_url = add_query_arg( array(
+			'action'  => 'update_a11y_status_selected',
+			'success' => $successful,
+			'fail'    => $unsuccessful,
+		), $redirect_url );
+
+		return $redirect_url;
 	}
 
 }
