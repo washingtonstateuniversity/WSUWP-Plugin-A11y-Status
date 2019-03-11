@@ -25,14 +25,12 @@ class WSUWP_A11y_Status {
 	public static $slug = 'wsuwp_a11y_status';
 
 	/**
-	 * The plugin version number.
+	 * The plugin metadata.
 	 *
-	 * @todo Set this using a setter method instead.
-	 *
-	 * @since 0.1.0
-	 * @var string
+	 * @since 0.8.0
+	 * @var array
 	 */
-	protected $version = '0.7.0';
+	public $plugin_meta;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -572,7 +570,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public function enqueue_scripts() {
-		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->version );
+		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->plugin_meta['Version'] );
 	}
 
 	/**
