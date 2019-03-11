@@ -17,7 +17,20 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 0.6.0 (:construction: WIP 2019-03-08)
+## 0.7.0 (2019-03-11)
+
+### Changed
+
+- Load the plugin on the `plugins_loaded` hook instead of `after_setup_theme`.
+- Refactored singleton instance setup method to use `isset()`.
+
+### Added
+
+- An uninstall method (which fires only when the plugin is deleted from the Plugins admin screen) that removes all plugin data from the from the database.
+- Activation method to fetch API data and populate the user metadata for all users when the plugin is initially activated.
+- An action on the `user_register` hook, which fires immediately after a user is added to the database, to fetch and save accessibility training data for that user.
+
+## 0.6.0 (2019-03-08)
 
 ### Fixed
 

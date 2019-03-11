@@ -32,7 +32,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 * @var string
 	 */
-	protected $version = '0.6.0';
+	protected $version = '0.7.0';
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -66,10 +66,9 @@ class WSUWP_A11y_Status {
 	 * @return object WSUWP_A11y_Status
 	 */
 	public static function get_instance() {
-		static $instance = null;
+		static $instance;
 
-		// Only set up and activate the plugin if it hasn't already been done.
-		if ( null === $instance ) {
+		if ( ! isset( $instance ) ) {
 			$instance = new WSUWP_A11y_Status();
 		}
 
@@ -91,7 +90,18 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		// @todo Fetch the API data on plugin activation.
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		$user       = wp_get_current_user();
+		$user_login = $user->user_login;
+
+		// The activation hook fires before the plugin is loaded, so we have get the instance manually.
+		$instance = self::get_instance();
+
+		// Fetch the API data on plugin activation.
+		$instance->update_a11y_status_usermeta( $user_login, $user );
 	}
 
 	/**
@@ -100,7 +110,29 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function deactivate() {
-		// @todo Something.
+		// Nothing for now.
+	}
+
+	/**
+	 * Uninstalls the WSUWP A11y Status plugin.
+	 *
+	 * @since 0.7.0
+	 */
+	public static function uninstall() {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		if ( __FILE__ !== WP_UNINSTALL_PLUGIN ) {
+			return;
+		}
+
+		// Delete all user metadata saved by the plugin.
+		$users = get_users( array( 'fields' => array( 'ID' ) ) );
+
+		foreach ( $users as $user ) {
+			self::flush_a11y_status_usermeta( absint( $user->ID ) );
+		}
 	}
 
 	/**
@@ -110,6 +142,7 @@ class WSUWP_A11y_Status {
 	 */
 	public function setup_hooks() {
 		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
+		add_action( 'user_register', array( $this, 'update_a11y_status_by_user_id' ), 10, 1 );
 		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
