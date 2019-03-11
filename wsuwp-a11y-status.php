@@ -42,7 +42,7 @@ register_uninstall_hook( __FILE__, array( 'WSUWP_A11y_Status', 'uninstall' ) );
 function load_wsuwp_a11y_status() {
 	$wsuwp_a11y_status = WSUWP_A11y_Status::get_instance();
 	$wsuwp_a11y_status->setup_hooks();
-	$wsuwp_a11y_status->plugin_meta = get_plugin_data( __FILE__ );
+	$wsuwp_a11y_status->set_properties( __FILE__ );
 
 	return $wsuwp_a11y_status;
 }

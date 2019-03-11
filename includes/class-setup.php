@@ -30,7 +30,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.8.0
 	 * @var array
 	 */
-	public $plugin_meta;
+	private $plugin_meta;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -39,14 +39,6 @@ class WSUWP_A11y_Status {
 	 * @var string
 	 */
 	private $url;
-
-	/**
-	 * One or more user IDs to check with the API.
-	 *
-	 * @since 0.1.0
-	 * @var string
-	 */
-	private $users;
 
 	/**
 	 * The WSU Accessibility Training API response.
@@ -153,32 +145,13 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
-	 * Sets the WSU Accessibility Training API endpoint properties.
+	 * Sets the WSUWP A11y Status default properties.
 	 *
-	 * @since 0.1.0
-	 *
-	 * @param $props {
-	 *     @type string $url   Required. A valid API endpoint to check on WSU Accessibility Training status.
-	 *     @type array  $users Required. An associative array of one or more WSU Net IDs to check in the format WP_ID => WSU_NID.
-	 * }
-	 * @return void
+	 * @since 0.8.0
 	 */
-	private function set_endpoint_props( $props ) {
-		$defaults = array(
-			'url'   => $this->url,
-			'users' => $this->users,
-		);
-
-		$props = wp_parse_args( $props, $defaults );
-
-		if ( ! is_array( $props['users'] ) ) {
-			$this->error( 'Users list in `set_endpoint_props()` must be an array.' );
-
-			return false;
-		}
-
-		$this->url   = esc_url_raw( $props['url'] );
-		$this->users = array_map( 'sanitize_user', $props['users'] );
+	public function set_properties( $file ) {
+		$this->plugin_meta = get_plugin_data( $file );
+		$this->url         = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 	}
 
 	/**
@@ -216,10 +189,28 @@ class WSUWP_A11y_Status {
 			 */
 
 			// Save only the email usernames (everything to the last `@` sign).
-			$usernames[ $wp_user->ID ] = implode( explode( '@', $wp_user->user_email, -1 ) );
+			$usernames[ $wp_user->ID ] = $this->wp_email_to_wsu_username( $wp_user->user_email );
 		}
 
 		return $usernames;
+	}
+
+	/**
+	 * Formats an email address into a WSU net ID username.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $login Required. A properly formatted email address to convert.
+	 * @return string|false A sanitized username formed by dropping the domain from an email address. False if email is missing or malformed.
+	 */
+	private function wp_email_to_wsu_username( $login ) {
+		if ( ! is_email( $login ) ) {
+			return false;
+		}
+
+		$username = implode( explode( '@', $login, -1 ) );
+
+		return sanitize_user( $username );
 	}
 
 	/**
@@ -239,15 +230,9 @@ class WSUWP_A11y_Status {
 	 */
 	public function update_a11y_status_usermeta( $user_login, $user ) {
 
-		// Define the WSU A11y Training status API endpoint.
-		$this->set_endpoint_props(
-			array(
-				'url'   => 'https://webserv.wsu.edu/accessibility/training/service',
-				'users' => $this->get_usernames_list( $user ),
-			)
-		);
+		$users = $this->get_usernames_list( $user );
 
-		foreach ( $this->users as $user_id => $username ) {
+		foreach ( $users as $user_id => $username ) {
 			/*
 			 * @todo Add a check so that for certified users we only fetch new
 			 * data when they're nearing expiration.
@@ -273,12 +258,11 @@ class WSUWP_A11y_Status {
 	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_by_user_id( $user_id ) {
-		$api_url  = 'https://webserv.wsu.edu/accessibility/training/service';
 		$wp_user  = get_user_by( 'id', $user_id );
-		$username = implode( explode( '@', $wp_user->user_email, -1 ) );
+		$username = $this->wp_email_to_wsu_username( $wp_user->user_email );
 
 		// Fetch the accessibility training status data.
-		$user_status = $this->fetch_a11y_status_response( $api_url, $username );
+		$user_status = $this->fetch_a11y_status_response( $this->url, $username );
 
 		// Save the accessibility training status to user metadata.
 		$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
