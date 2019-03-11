@@ -278,12 +278,12 @@ class WSUWP_A11y_Status {
 	 * array and return it. The returned array should include the following
 	 * key-value pairs:
 	 *
-	 * array (
-	 *     'isCertified'    => (string) "True" || "False",
-	 *     'Expires'        => (string, datetime in format `M j Y g:iA`) "Mar 7 2019 6:52PM",
-	 *     'trainingURL'    => (string) "https://url.to.wsu.accessibility.training/",
-	 *     'last_checked'   => (string, datetime in format `YYYY-MM-DD HH:MM:SS`) "2019-03-05 09:48:57",
-	 *     'ever_certified' => (bool) true || false,
+	 * (
+	 *   'isCertified'    => (bool)     whether the user is a11y certified
+	 *   'Expires'        => (DateTime) the expiration date
+	 *   'trainingURL'    => (string)   the training URL
+	 *   'last_checked'   => (string)   the date last checked in mysql format
+	 *   'ever_certified' => (bool)     whether the user was ever certified
 	 * )
 	 *
 	 * @since 0.5.0
@@ -321,13 +321,27 @@ class WSUWP_A11y_Status {
 
 		$user_status = array_shift( $response );
 
-		// Save date of last API check.
-		$user_status['last_checked'] = current_time( 'mysql' );
-
-		// Save user metadata to track if a user was ever certified in the past.
-		if ( 'True' === $user_status['isCertified'] ) {
-			$user_status['ever_certified'] = true;
+		/*
+		 * Sanitize API data for saving in the database and insert helper data.
+		 *
+		 *   - Convert 'isCertified' into a booleen.
+		 *   - Convert 'Expires' into a DateTime object.
+		 *   - Set 'ever_certified' to track if a user was ever certified in the past.
+		 *   - Set 'last_checked' to track the last time the user's data was updated.
+		 *   - Sanitize 'trainingURL' value.
+		 *
+		 * @since 0.8.0
+		 */
+ 		if ( 'True' === $user_status['isCertified'] ) {
+ 			$user_status['isCertified']    = true;
+ 			$user_status['ever_certified'] = true;
+ 		} else {
+			$user_status['isCertified'] = false;
 		}
+
+		$user_status['Expires']      = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
+		$user_status['last_checked'] = current_time( 'mysql' );
+		$user_status['trainingURL']  = esc_url_raw( $user_status['trainingURL'] );
 
 		return $user_status;
 	}
@@ -356,6 +370,27 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Gets the URL to the WSU Accessibility Training course.
+	 *
+	 * Note: This returns an unescaped URL string. Users should handle escaping
+	 * before using this.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
+	 */
+	private function get_user_a11y_training_url( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
+
+		if ( ! empty( $user_status ) ) {
+			return $user_status['trainingURL'];
+		}
+
+		return false;
+	}
+
+	/**
 	 * Gets the date a given user's a11y certification expires.
 	 *
 	 * Retrieves the date a given user's WSU Accessibility certification
@@ -369,10 +404,8 @@ class WSUWP_A11y_Status {
 	public static function get_user_a11y_expiration_date( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$expires = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-
-			return date_format( $expires, get_option( 'date_format' ) );
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+			return date_format( $user_status['Expires'], get_option( 'date_format' ) );
 		}
 
 		return false;
@@ -395,11 +428,8 @@ class WSUWP_A11y_Status {
 	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$user_expiry_date   = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-			$time_to_expiration = human_time_diff( date_format( $user_expiry_date, 'U' ) );
-
-			return $time_to_expiration;
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+			return human_time_diff( date_format( $user_status['Expires'], 'U' ) );
 		}
 
 		return false;
@@ -421,7 +451,7 @@ class WSUWP_A11y_Status {
 	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( empty( $user_status ) || 'False' === $user_status['isCertified'] ) {
+		if ( empty( $user_status ) || false === $user_status['isCertified'] ) {
 			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
 
 			$registration = date_create( $wp_user->user_registered );
@@ -432,7 +462,7 @@ class WSUWP_A11y_Status {
 				$days_remaining = '0 days';
 			} else {
 				// The days remaining in the grace period.
-				$days_remaining = human_time_diff( date_format( $registration, 'U' ), current_time( 'timestamp' ) );
+				$days_remaining = human_time_diff( date_format( $registration, 'U' ), time() );
 			}
 
 			return $days_remaining;
@@ -452,7 +482,7 @@ class WSUWP_A11y_Status {
 	public static function is_user_certified( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
 			return true;
 		}
 
@@ -488,9 +518,8 @@ class WSUWP_A11y_Status {
 	public static function is_user_a11y_lt_one_month( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$expiry = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-			$diff   = $expiry->diff( date_create() );
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+			$diff = $user_status['Expires']->diff( date_create() );
 
 			if ( 1 > $diff->m ) {
 				return true;
@@ -509,7 +538,6 @@ class WSUWP_A11y_Status {
 	 * @return bool True if successful, false if not.
 	 */
 	public static function flush_a11y_status_usermeta( $user_id ) {
-
 		$deleted = delete_user_meta( $user_id, self::$slug );
 
 		return $deleted;
@@ -569,12 +597,8 @@ class WSUWP_A11y_Status {
 	 * @return void
 	 */
 	public function user_a11y_status_notice__remind() {
-		$training_link = 'http://go.wsu.edu/web-accessibility';
-		$is_certified  = self::is_user_certified();
-
 		// Build the messages for uncertified, expired certification, and soon-to-expire certification.
-		if ( false === $is_certified ) :
-
+		if ( ! self::is_user_certified() ) {
 			$class = 'notice-error';
 
 			if ( self::was_user_certified() ) {
@@ -596,8 +620,7 @@ class WSUWP_A11y_Status {
 				);
 			}
 
-		elseif ( true === $is_certified ) :
-
+		} else {
 			// User certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
 				$class      = 'notice-warning';
@@ -613,21 +636,20 @@ class WSUWP_A11y_Status {
 				return;
 			}
 
-		else :
+		}
 
-			return;
+		if ( $message ) {
+			?>
+			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
+				<p>
+					<strong><?php echo esc_html( $message ); ?></strong>
+					<?php echo esc_html( $expiration ); ?>
+					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+				</p>
+			</div>
+			<?php
+		}
 
-		endif;
-		?>
-
-		<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
-			<p>
-				<strong><?php echo esc_html( $message ); ?></strong>
-				<?php echo esc_html( $expiration ); ?>
-				<strong><a href="<?php echo esc_url( $training_link ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
-			</p>
-		</div>
-		<?php
 	}
 
 	/**
@@ -720,10 +742,9 @@ class WSUWP_A11y_Status {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$is_certified = self::is_user_certified( $user_id );
 			$last_checked = self::get_user_a11y_status( $user_id )['last_checked'];
 
-			if ( false === $is_certified ) {
+			if ( ! self::is_user_certified( $user_id ) ) {
 				if ( self::was_user_certified( $user_id ) ) {
 					$expired = self::get_user_a11y_time_to_expiration( $user_id );
 					$output  = sprintf(
@@ -737,7 +758,7 @@ class WSUWP_A11y_Status {
 						esc_attr( $last_checked )
 					);
 				}
-			} elseif ( true === $is_certified ) {
+			} else {
 				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
 				$expires = self::get_user_a11y_time_to_expiration( $user_id );
 				$output  = sprintf(
