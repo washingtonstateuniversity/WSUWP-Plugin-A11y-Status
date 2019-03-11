@@ -66,10 +66,9 @@ class WSUWP_A11y_Status {
 	 * @return object WSUWP_A11y_Status
 	 */
 	public static function get_instance() {
-		static $instance = null;
+		static $instance;
 
-		// Only set up and activate the plugin if it hasn't already been done.
-		if ( null === $instance ) {
+		if ( ! isset( $instance ) ) {
 			$instance = new WSUWP_A11y_Status();
 		}
 
@@ -91,7 +90,18 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		// @todo Fetch the API data on plugin activation.
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		$user       = wp_get_current_user();
+		$user_login = $user->user_login;
+
+		// The activation hook fires before the plugin is loaded, so we have get the instance manually.
+		$instance = self::get_instance();
+
+		// Fetch the API data on plugin activation.
+		$instance->update_a11y_status_usermeta( $user_login, $user );
 	}
 
 	/**
@@ -100,7 +110,29 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public static function deactivate() {
-		// @todo Something.
+		// Nothing for now.
+	}
+
+	/**
+	 * Uninstalls the WSUWP A11y Status plugin.
+	 *
+	 * @since 0.7.0
+	 */
+	public static function uninstall() {
+		if ( ! current_user_can( 'activate_plugins' ) ) {
+			return;
+		}
+
+		if ( __FILE__ !== WP_UNINSTALL_PLUGIN ) {
+			return;
+		}
+
+		// Delete all user metadata saved by the plugin.
+		$users = get_users( array( 'fields' => array( 'ID' ) ) );
+
+		foreach ( $users as $user ) {
+			self::flush_a11y_status_usermeta( absint( $user->ID ) );
+		}
 	}
 
 	/**

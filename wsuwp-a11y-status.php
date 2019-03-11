@@ -25,11 +25,12 @@ if ( ! defined( 'WPINC' ) ) {
 require_once __DIR__ . '/includes/class-setup.php';
 
 // Starts things up.
-add_action( 'after_setup_theme', 'load_wsuwp_a11y_status' );
+add_action( 'plugins_loaded', 'load_wsuwp_a11y_status' );
 
 // Flushes rules on activation and cleans up on deactivation.
 register_activation_hook( __FILE__, array( 'WSUWP_A11y_Status', 'activate' ) );
 register_deactivation_hook( __FILE__, array( 'WSUWP_A11y_Status', 'deactivate' ) );
+register_uninstall_hook( __FILE__, array( 'WSUWP_A11y_Status', 'uninstall' ) );
 
 /**
  * Creates an instance of the WSUWP A11y Status class.
