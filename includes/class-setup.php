@@ -332,10 +332,10 @@ class WSUWP_A11y_Status {
 		 *
 		 * @since 0.8.0
 		 */
- 		if ( 'True' === $user_status['isCertified'] ) {
- 			$user_status['isCertified']    = true;
- 			$user_status['ever_certified'] = true;
- 		} else {
+		if ( 'True' === $user_status['isCertified'] ) {
+			$user_status['isCertified']    = true;
+			$user_status['ever_certified'] = true;
+		} else {
 			$user_status['isCertified'] = false;
 		}
 
@@ -619,7 +619,6 @@ class WSUWP_A11y_Status {
 					self::get_user_a11y_grace_period_remaining()
 				);
 			}
-
 		} else {
 			// User certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
@@ -635,7 +634,6 @@ class WSUWP_A11y_Status {
 				// Nothing if the certification lasts for more than one month.
 				return;
 			}
-
 		}
 
 		if ( $message ) {
