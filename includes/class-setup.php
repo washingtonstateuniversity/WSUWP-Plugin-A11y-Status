@@ -25,14 +25,12 @@ class WSUWP_A11y_Status {
 	public static $slug = 'wsuwp_a11y_status';
 
 	/**
-	 * The plugin version number.
+	 * The plugin metadata.
 	 *
-	 * @todo Set this using a setter method instead.
-	 *
-	 * @since 0.1.0
-	 * @var string
+	 * @since 0.8.0
+	 * @var array
 	 */
-	protected $version = '0.7.0';
+	private $plugin_meta;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -41,14 +39,6 @@ class WSUWP_A11y_Status {
 	 * @var string
 	 */
 	private $url;
-
-	/**
-	 * One or more user IDs to check with the API.
-	 *
-	 * @since 0.1.0
-	 * @var string
-	 */
-	private $users;
 
 	/**
 	 * The WSU Accessibility Training API response.
@@ -63,7 +53,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return object WSUWP_A11y_Status
+	 * @return WSUWP_A11y_Status An instance of the WSUWP_A11y_Status class.
 	 */
 	public static function get_instance() {
 		static $instance;
@@ -155,32 +145,13 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
-	 * Sets the WSU Accessibility Training API endpoint properties.
+	 * Sets the WSUWP A11y Status default properties.
 	 *
-	 * @since 0.1.0
-	 *
-	 * @param $props {
-	 *     @type string $url   Required. A valid API endpoint to check on WSU Accessibility Training status.
-	 *     @type array  $users Required. An associative array of one or more WSU Net IDs to check in the format WP_ID => WSU_NID.
-	 * }
-	 * @return void
+	 * @since 0.8.0
 	 */
-	private function set_endpoint_props( $props ) {
-		$defaults = array(
-			'url'   => $this->url,
-			'users' => $this->users,
-		);
-
-		$props = wp_parse_args( $props, $defaults );
-
-		if ( ! is_array( $props['users'] ) ) {
-			$this->error( 'Users list in `set_endpoint_props()` must be an array.' );
-
-			return false;
-		}
-
-		$this->url   = esc_url_raw( $props['url'] );
-		$this->users = array_map( 'sanitize_user', $props['users'] );
+	public function set_properties( $file ) {
+		$this->plugin_meta = get_plugin_data( $file );
+		$this->url         = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 	}
 
 	/**
@@ -193,8 +164,8 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.5.0
 	 *
-	 * @param object $current_user A WP_User instance of the current user.
-	 * @return array An associative array of user_id => wsu_nid key-value pairs.
+	 * @param WP_User $current_user A WP User object instance of the current user.
+	 * @return string[] An associative array of user_id => wsu_nid key-value pairs.
 	 */
 	private function get_usernames_list( $current_user ) {
 
@@ -218,10 +189,28 @@ class WSUWP_A11y_Status {
 			 */
 
 			// Save only the email usernames (everything to the last `@` sign).
-			$usernames[ $wp_user->ID ] = implode( explode( '@', $wp_user->user_email, -1 ) );
+			$usernames[ $wp_user->ID ] = $this->wp_email_to_wsu_username( $wp_user->user_email );
 		}
 
 		return $usernames;
+	}
+
+	/**
+	 * Formats an email address into a WSU net ID username.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $login Required. A properly formatted email address to convert.
+	 * @return string|false A sanitized username formed by dropping the domain from an email address. False if email is missing or malformed.
+	 */
+	private function wp_email_to_wsu_username( $login ) {
+		if ( ! is_email( $login ) ) {
+			return false;
+		}
+
+		$username = implode( explode( '@', $login, -1 ) );
+
+		return sanitize_user( $username );
 	}
 
 	/**
@@ -235,21 +224,15 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.5.0
 	 *
-	 * @param string $user_login The authenticated user's login.
-	 * @param object $user       The WP_User object for the authenticated user.
+	 * @param string  $user_login The authenticated user's login.
+	 * @param WP_User $user       The WP User object for the authenticated user.
 	 * @return array Associative array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_usermeta( $user_login, $user ) {
 
-		// Define the WSU A11y Training status API endpoint.
-		$this->set_endpoint_props(
-			array(
-				'url'   => 'https://webserv.wsu.edu/accessibility/training/service',
-				'users' => $this->get_usernames_list( $user ),
-			)
-		);
+		$users = $this->get_usernames_list( $user );
 
-		foreach ( $this->users as $user_id => $username ) {
+		foreach ( $users as $user_id => $username ) {
 			/*
 			 * @todo Add a check so that for certified users we only fetch new
 			 * data when they're nearing expiration.
@@ -275,12 +258,11 @@ class WSUWP_A11y_Status {
 	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_by_user_id( $user_id ) {
-		$api_url  = 'https://webserv.wsu.edu/accessibility/training/service';
 		$wp_user  = get_user_by( 'id', $user_id );
-		$username = implode( explode( '@', $wp_user->user_email, -1 ) );
+		$username = $this->wp_email_to_wsu_username( $wp_user->user_email );
 
 		// Fetch the accessibility training status data.
-		$user_status = $this->fetch_a11y_status_response( $api_url, $username );
+		$user_status = $this->fetch_a11y_status_response( $this->url, $username );
 
 		// Save the accessibility training status to user metadata.
 		$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
@@ -296,12 +278,12 @@ class WSUWP_A11y_Status {
 	 * array and return it. The returned array should include the following
 	 * key-value pairs:
 	 *
-	 * array (
-	 *     'isCertified'    => (string) "True" || "False",
-	 *     'Expires'        => (string, datetime in format `M j Y g:iA`) "Mar 7 2019 6:52PM",
-	 *     'trainingURL'    => (string) "https://url.to.wsu.accessibility.training/",
-	 *     'last_checked'   => (string, datetime in format `YYYY-MM-DD HH:MM:SS`) "2019-03-05 09:48:57",
-	 *     'ever_certified' => (bool) true || false,
+	 * (
+	 *   'isCertified'    => (bool)     whether the user is a11y certified
+	 *   'Expires'        => (DateTime) the expiration date
+	 *   'trainingURL'    => (string)   the training URL
+	 *   'last_checked'   => (string)   the date last checked in mysql format
+	 *   'ever_certified' => (bool)     whether the user was ever certified
 	 * )
 	 *
 	 * @since 0.5.0
@@ -339,13 +321,19 @@ class WSUWP_A11y_Status {
 
 		$user_status = array_shift( $response );
 
-		// Save date of last API check.
-		$user_status['last_checked'] = current_time( 'mysql' );
-
-		// Save user metadata to track if a user was ever certified in the past.
+		/*
+		 * Sanitize API data for saving in the database and insert helper data.
+		 */
 		if ( 'True' === $user_status['isCertified'] ) {
+			$user_status['isCertified']    = true;
 			$user_status['ever_certified'] = true;
+		} else {
+			$user_status['isCertified'] = false;
 		}
+
+		$user_status['Expires']      = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
+		$user_status['last_checked'] = current_time( 'mysql' );
+		$user_status['trainingURL']  = esc_url_raw( $user_status['trainingURL'] );
 
 		return $user_status;
 	}
@@ -374,6 +362,27 @@ class WSUWP_A11y_Status {
 	}
 
 	/**
+	 * Gets the URL to the WSU Accessibility Training course.
+	 *
+	 * Note: This returns an unescaped URL string. Users should handle escaping
+	 * before using this.
+	 *
+	 * @since 0.8.0
+	 *
+	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
+	 * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
+	 */
+	private function get_user_a11y_training_url( $user_id = '' ) {
+		$user_status = self::get_user_a11y_status( $user_id );
+
+		if ( ! empty( $user_status ) ) {
+			return $user_status['trainingURL'];
+		}
+
+		return false;
+	}
+
+	/**
 	 * Gets the date a given user's a11y certification expires.
 	 *
 	 * Retrieves the date a given user's WSU Accessibility certification
@@ -382,15 +391,13 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
+	 * @return string|false The expiration date for the given user or false if no data.
 	 */
 	public static function get_user_a11y_expiration_date( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$expires = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-
-			return date_format( $expires, get_option( 'date_format' ) );
+		if ( ! empty( $user_status ) ) {
+			return date_format( $user_status['Expires'], get_option( 'date_format' ) );
 		}
 
 		return false;
@@ -408,16 +415,13 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
+	 * @return string|false The time remaining until a11y certification expires for the given user or false if no data.
 	 */
 	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$user_expiry_date   = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-			$time_to_expiration = human_time_diff( date_format( $user_expiry_date, 'U' ) );
-
-			return $time_to_expiration;
+		if ( ! empty( $user_status ) ) {
+			return human_time_diff( date_format( $user_status['Expires'], 'U' ) );
 		}
 
 		return false;
@@ -439,18 +443,18 @@ class WSUWP_A11y_Status {
 	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( empty( $user_status ) || 'False' === $user_status['isCertified'] ) {
+		if ( empty( $user_status ) || ! $user_status['isCertified'] ) {
 			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
 
 			$registration = date_create( $wp_user->user_registered );
-			$diff         = $registration->diff( date_create() );
 
-			if ( 1 <= $diff->m ) {
-				// Grace period of one month has passed.
+			$end   = $registration->add( new DateInterval( 'P30D' ) );
+			$today = date_create();
+
+			if ( $today > $end ) {
 				$days_remaining = '0 days';
 			} else {
-				// The days remaining in the grace period.
-				$days_remaining = human_time_diff( date_format( $registration, 'U' ), current_time( 'timestamp' ) );
+				$days_remaining = date_diff( $end, $today )->format( '%a days' );
 			}
 
 			return $days_remaining;
@@ -470,7 +474,7 @@ class WSUWP_A11y_Status {
 	public static function is_user_certified( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
 			return true;
 		}
 
@@ -506,9 +510,8 @@ class WSUWP_A11y_Status {
 	public static function is_user_a11y_lt_one_month( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && 'False' !== $user_status['isCertified'] ) {
-			$expiry = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-			$diff   = $expiry->diff( date_create() );
+		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+			$diff = $user_status['Expires']->diff( date_create() );
 
 			if ( 1 > $diff->m ) {
 				return true;
@@ -527,7 +530,6 @@ class WSUWP_A11y_Status {
 	 * @return bool True if successful, false if not.
 	 */
 	public static function flush_a11y_status_usermeta( $user_id ) {
-
 		$deleted = delete_user_meta( $user_id, self::$slug );
 
 		return $deleted;
@@ -538,8 +540,8 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|array $message The error message to display. Accepts a single string or an array of strings.
-	 * @param string $error_code Optional. A computer-readable string to identify the error.
+	 * @param string|string[] $message    Required. The error message to display. Accepts a single string or an array of strings.
+	 * @param string          $error_code Optional. A computer-readable string to identify the error.
 	 * @return void|false The HTML formatted error message if debug display is enabled and false if not.
 	 */
 	private function error( $message, $error_code = '500' ) {
@@ -572,7 +574,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public function enqueue_scripts() {
-		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->version );
+		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->plugin_meta['Version'] );
 	}
 
 	/**
@@ -587,12 +589,8 @@ class WSUWP_A11y_Status {
 	 * @return void
 	 */
 	public function user_a11y_status_notice__remind() {
-		$training_link = 'http://go.wsu.edu/web-accessibility';
-		$is_certified  = self::is_user_certified();
-
 		// Build the messages for uncertified, expired certification, and soon-to-expire certification.
-		if ( false === $is_certified ) :
-
+		if ( ! self::is_user_certified() ) {
 			$class = 'notice-error';
 
 			if ( self::was_user_certified() ) {
@@ -613,9 +611,7 @@ class WSUWP_A11y_Status {
 					self::get_user_a11y_grace_period_remaining()
 				);
 			}
-
-		elseif ( true === $is_certified ) :
-
+		} else {
 			// User certification expires soon.
 			if ( self::is_user_a11y_lt_one_month() ) {
 				$class      = 'notice-warning';
@@ -630,22 +626,20 @@ class WSUWP_A11y_Status {
 				// Nothing if the certification lasts for more than one month.
 				return;
 			}
+		}
 
-		else :
+		if ( $message ) {
+			?>
+			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
+				<p>
+					<strong><?php echo esc_html( $message ); ?></strong>
+					<?php echo esc_html( $expiration ); ?>
+					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+				</p>
+			</div>
+			<?php
+		}
 
-			return;
-
-		endif;
-		?>
-
-		<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
-			<p>
-				<strong><?php echo esc_html( $message ); ?></strong>
-				<?php echo esc_html( $expiration ); ?>
-				<strong><a href="<?php echo esc_url( $training_link ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
-			</p>
-		</div>
-		<?php
 	}
 
 	/**
@@ -738,10 +732,9 @@ class WSUWP_A11y_Status {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$is_certified = self::is_user_certified( $user_id );
 			$last_checked = self::get_user_a11y_status( $user_id )['last_checked'];
 
-			if ( false === $is_certified ) {
+			if ( ! self::is_user_certified( $user_id ) ) {
 				if ( self::was_user_certified( $user_id ) ) {
 					$expired = self::get_user_a11y_time_to_expiration( $user_id );
 					$output  = sprintf(
@@ -755,7 +748,7 @@ class WSUWP_A11y_Status {
 						esc_attr( $last_checked )
 					);
 				}
-			} elseif ( true === $is_certified ) {
+			} else {
 				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
 				$expires = self::get_user_a11y_time_to_expiration( $user_id );
 				$output  = sprintf(
@@ -863,7 +856,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @param string $redirect_url The redirect URL.
 	 * @param string $doaction     The action being taken.
-	 * @param string $user_ids     An array of user IDs matching the selected users.
+	 * @param int[]  $user_ids     An array of user IDs matching the selected users.
 	 * @return string The modified redirect URL.
 	 */
 	public function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) {

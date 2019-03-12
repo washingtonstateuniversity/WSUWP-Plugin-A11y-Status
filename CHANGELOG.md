@@ -17,6 +17,31 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.8.0 (2019-03-12)
+
+### Fixed
+
+- :bug: Fix #6 Correct date diff calculation for grace period to count down instead of up.
+- :bug: Fix #5 Return expiration dates whether user certified or not.
+
+### Changed
+
+- :card_file_box: Consolidate accessibility data sanitizing and formatting into the fetch method.
+- Clean up getting and printing methods using newly sanitized and normalized accessibility data.
+- :memo: Clean up and expand some documentation.
+- Get plugin version from plugin data (set plugin data in newly added `set_properties` method).
+
+### Added
+
+- Method to get the WSU Accessibility Training course URL from the user metadata.
+- Method `set_properties` to set plugin properties when instantiated.
+- Formatting method to convert email addresses into usernames.
+
+### Removed
+
+- Remove `set_endpoint_props` method that set the `$url` and `$users` property in favor of setting the URL once and setting the users only as needed.
+- No longer needed `$users` property.
+
 ## 0.7.0 (2019-03-11)
 
 ### Changed
