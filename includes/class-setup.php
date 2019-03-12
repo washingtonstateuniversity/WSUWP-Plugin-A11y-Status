@@ -443,18 +443,18 @@ class WSUWP_A11y_Status {
 	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( empty( $user_status ) || false === $user_status['isCertified'] ) {
+		if ( empty( $user_status ) || ! $user_status['isCertified'] ) {
 			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
 
 			$registration = date_create( $wp_user->user_registered );
-			$diff         = $registration->diff( date_create() );
 
-			if ( 1 <= $diff->m ) {
-				// Grace period of one month has passed.
+			$end   = $registration->add( new DateInterval( 'P30D' ) );
+			$today = date_create();
+
+			if ( $today > $end ) {
 				$days_remaining = '0 days';
 			} else {
-				// The days remaining in the grace period.
-				$days_remaining = human_time_diff( date_format( $registration, 'U' ), time() );
+				$days_remaining = date_diff( $end, $today )->format( '%a days' );
 			}
 
 			return $days_remaining;
