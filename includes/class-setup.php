@@ -233,10 +233,10 @@ class WSUWP_A11y_Status {
 		$users = $this->get_usernames_list( $user );
 
 		foreach ( $users as $user_id => $username ) {
-			/*
-			 * @todo Add a check so that for certified users we only fetch new
-			 * data when they're nearing expiration.
-			 */
+			// Only fetch new data for certified users when nearing expiration.
+			if ( $this->is_user_certified( $user_id ) && ! $this->is_user_a11y_lt_one_month( $user_id ) ) {
+				continue;
+			}
 
 			// Fetch the accessibility training status data.
 			$user_status = $this->fetch_a11y_status_response( $this->url, $username );
