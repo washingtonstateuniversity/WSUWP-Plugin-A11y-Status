@@ -323,14 +323,6 @@ class WSUWP_A11y_Status {
 
 		/*
 		 * Sanitize API data for saving in the database and insert helper data.
-		 *
-		 *   - Convert 'isCertified' into a booleen.
-		 *   - Convert 'Expires' into a DateTime object.
-		 *   - Set 'ever_certified' to track if a user was ever certified in the past.
-		 *   - Set 'last_checked' to track the last time the user's data was updated.
-		 *   - Sanitize 'trainingURL' value.
-		 *
-		 * @since 0.8.0
 		 */
 		if ( 'True' === $user_status['isCertified'] ) {
 			$user_status['isCertified']    = true;
@@ -399,12 +391,12 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
+	 * @return string|false The expiration date for the given user or false if no data.
 	 */
 	public static function get_user_a11y_expiration_date( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) ) {
 			return date_format( $user_status['Expires'], get_option( 'date_format' ) );
 		}
 
@@ -423,12 +415,12 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false the user is not certified or not found.
+	 * @return string|false The expiration date for the given user or false if no data.
 	 */
 	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
+		if ( ! empty( $user_status ) ) {
 			return human_time_diff( date_format( $user_status['Expires'], 'U' ) );
 		}
 
