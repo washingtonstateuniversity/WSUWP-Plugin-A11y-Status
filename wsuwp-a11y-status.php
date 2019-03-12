@@ -37,7 +37,7 @@ register_uninstall_hook( __FILE__, array( 'WSUWP_A11y_Status', 'uninstall' ) );
  *
  * @since 0.1.0
  *
- * @return object An instance of WSUWP_A11y_Status
+ * @return WSUWP_A11y_Status An instance of the WSUWP_A11y_Status class.
  */
 function load_wsuwp_a11y_status() {
 	$wsuwp_a11y_status = WSUWP_A11y_Status::get_instance();

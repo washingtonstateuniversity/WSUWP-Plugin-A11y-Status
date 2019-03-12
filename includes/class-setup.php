@@ -53,7 +53,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return object WSUWP_A11y_Status
+	 * @return WSUWP_A11y_Status An instance of the WSUWP_A11y_Status class.
 	 */
 	public static function get_instance() {
 		static $instance;
@@ -164,8 +164,8 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.5.0
 	 *
-	 * @param object $current_user A WP_User instance of the current user.
-	 * @return array An associative array of user_id => wsu_nid key-value pairs.
+	 * @param WP_User $current_user A WP User object instance of the current user.
+	 * @return string[] An associative array of user_id => wsu_nid key-value pairs.
 	 */
 	private function get_usernames_list( $current_user ) {
 
@@ -224,8 +224,8 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.5.0
 	 *
-	 * @param string $user_login The authenticated user's login.
-	 * @param object $user       The WP_User object for the authenticated user.
+	 * @param string  $user_login The authenticated user's login.
+	 * @param WP_User $user       The WP User object for the authenticated user.
 	 * @return array Associative array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_usermeta( $user_login, $user ) {
@@ -415,7 +415,7 @@ class WSUWP_A11y_Status {
 	 * @since 0.2.0
 	 *
 	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false if no data.
+	 * @return string|false The time remaining until a11y certification expires for the given user or false if no data.
 	 */
 	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
@@ -540,8 +540,8 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @param string|array $message The error message to display. Accepts a single string or an array of strings.
-	 * @param string $error_code Optional. A computer-readable string to identify the error.
+	 * @param string|string[] $message    Required. The error message to display. Accepts a single string or an array of strings.
+	 * @param string          $error_code Optional. A computer-readable string to identify the error.
 	 * @return void|false The HTML formatted error message if debug display is enabled and false if not.
 	 */
 	private function error( $message, $error_code = '500' ) {
@@ -856,7 +856,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @param string $redirect_url The redirect URL.
 	 * @param string $doaction     The action being taken.
-	 * @param string $user_ids     An array of user IDs matching the selected users.
+	 * @param int[]  $user_ids     An array of user IDs matching the selected users.
 	 * @return string The modified redirect URL.
 	 */
 	public function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) {
