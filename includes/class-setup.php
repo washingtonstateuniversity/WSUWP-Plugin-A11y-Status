@@ -835,7 +835,7 @@ class WSUWP_A11y_Status {
 			$user_id = ( isset( $_REQUEST['user_id'] ) ) ? absint( $_REQUEST['user_id'] ) : 0;
 
 			// Check permissions. Non-admins cannot update other users' information.
-			if ( $current_user->ID === $user_id && ! current_user_can( 'list_users' ) ) {
+			if ( $current_user->ID !== $user_id && ! current_user_can( 'list_users' ) ) {
 				wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
 			}
 
