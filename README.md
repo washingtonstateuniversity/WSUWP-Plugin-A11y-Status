@@ -1,4 +1,4 @@
-# WSUWP A11y Status [:construction: Work in Progress]
+# WSUWP A11y Status
 
 ## Overview
 

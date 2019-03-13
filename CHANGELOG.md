@@ -17,6 +17,23 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.9.0 (2019-03-13)
+
+### Fixed
+
+- :bug: A mistyped comparison operator in the `handle_a11y_status_actions` method blocked non-admins from refreshing their own accessibility data.
+
+### Changed
+
+- Replace the email-to-username method of generating NIDs with the more specific `get_user_wsu_nid` method, which checks the user's usermeta for a saved WSU NID value and falls back to the previous email-to-username conversion method.
+- :zap: During login action, only fetch new API data for certified users when nearing expiration to save on requests. (Per-user and batch update methods will still always fetch new data.)
+
+### Added
+
+- Add a refresh button to the "remind" admin notice to allow users to refresh their accessibility status data manually.
+- :lock: Add admin nonce verification on WSU NID profile form handler.
+- :sparkles: Add a new form field on the user profile screen -- along with an update handler -- to allow users to manually save a WSU network ID to the user metadata to use with the accessibility checker (to override the email address in case the email address isn't a WSU email).
+
 ## 0.8.0 (2019-03-12)
 
 ### Fixed
