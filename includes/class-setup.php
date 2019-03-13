@@ -137,6 +137,10 @@ class WSUWP_A11y_Status {
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_action( 'edit_user_profile', array( $this, 'usermeta_form_field_nid' ) );
+		add_action( 'show_user_profile', array( $this, 'usermeta_form_field_nid' ) );
+		add_action( 'edit_user_profile_update', array( $this, 'usermeta_form_field_nid_update' ) );
+		add_action( 'personal_options_update', array( $this, 'usermeta_form_field_nid_update' ) );
 		add_filter( 'manage_users_columns', array( $this, 'add_a11y_status_user_column' ) );
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
 		add_filter( 'user_row_actions', array( $this, 'add_a11y_status_user_row_action' ), 10, 2 );
@@ -179,38 +183,36 @@ class WSUWP_A11y_Status {
 		}
 
 		$usernames = array();
-		foreach ( $wp_users as $wp_user ) {
-			/*
-			 * @todo Add a check here to try getting the WSU ID from a user
-			 *       meta field (editable on the user profile page) before
-			 *       trying to build it ourselves out of the email address.
-			 *       This will allow specifiying the WSU ID for users not
-			 *       using a WSU email address.
-			 */
 
-			// Save only the email usernames (everything to the last `@` sign).
-			$usernames[ $wp_user->ID ] = $this->wp_email_to_wsu_username( $wp_user->user_email );
+		foreach ( $wp_users as $wp_user ) {
+			$usernames[ $wp_user->ID ] = $this->get_user_wsu_nid( $wp_user );
 		}
 
 		return $usernames;
 	}
 
 	/**
-	 * Formats an email address into a WSU net ID username.
+	 * Retrieves a user's WSU net ID from the user metadata or their email.
 	 *
-	 * @since 0.8.0
+	 * Returns a saved WSU NID in the user's usermeta if it exists. If no NID
+	 * usermeta is found, it falls back to the user email address and formats
+	 * it into a WSU net ID.
 	 *
-	 * @param string $login Required. A properly formatted email address to convert.
-	 * @return string|false A sanitized username formed by dropping the domain from an email address. False if email is missing or malformed.
+	 * @since 0.9.0
+	 *
+	 * @param WP_User $user Required. A WP_User object for the user to get a NID for.
+	 * @return string A sanitized WSU network ID.
 	 */
-	private function wp_email_to_wsu_username( $login ) {
-		if ( ! is_email( $login ) ) {
-			return false;
+	private function get_user_wsu_nid( $user ) {
+		// Check for a saved WSU NID in the users usermeta.
+		$wsu_nid = get_user_meta( $user->ID, '_wsu_nid', true );
+
+		if ( ! $wsu_nid ) {
+			// If no WSU NID is found try building one out of the user email.
+			$wsu_nid = implode( explode( '@', $user->user_email, -1 ) );
 		}
 
-		$username = implode( explode( '@', $login, -1 ) );
-
-		return sanitize_user( $username );
+		return sanitize_user( $wsu_nid );
 	}
 
 	/**
@@ -233,10 +235,10 @@ class WSUWP_A11y_Status {
 		$users = $this->get_usernames_list( $user );
 
 		foreach ( $users as $user_id => $username ) {
-			/*
-			 * @todo Add a check so that for certified users we only fetch new
-			 * data when they're nearing expiration.
-			 */
+			// Only fetch new data for certified users when nearing expiration.
+			if ( $this->is_user_certified( $user_id ) && ! $this->is_user_a11y_lt_one_month( $user_id ) ) {
+				continue;
+			}
 
 			// Fetch the accessibility training status data.
 			$user_status = $this->fetch_a11y_status_response( $this->url, $username );
@@ -258,8 +260,7 @@ class WSUWP_A11y_Status {
 	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_by_user_id( $user_id ) {
-		$wp_user  = get_user_by( 'id', $user_id );
-		$username = $this->wp_email_to_wsu_username( $wp_user->user_email );
+		$username = $this->get_user_wsu_nid( get_user_by( 'id', $user_id ) );
 
 		// Fetch the accessibility training status data.
 		$user_status = $this->fetch_a11y_status_response( $this->url, $username );
@@ -629,12 +630,18 @@ class WSUWP_A11y_Status {
 		}
 
 		if ( $message ) {
+			$user_id    = get_current_user_id();
+			$update_uri = wp_nonce_url( add_query_arg( array(
+				'action'  => 'update_a11y_status',
+				'user_id' => $user_id,
+			) ), 'update_a11y_' . $user_id );
 			?>
 			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 				<p>
 					<strong><?php echo esc_html( $message ); ?></strong>
 					<?php echo esc_html( $expiration ); ?>
-					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training<span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+					<a class="button" href="<?php echo esc_url( $update_uri ); ?>"><?php esc_html_e( 'Refresh', 'wsuwp-a11y-status' ); ?> <span class="screen-reader-text">(<?php esc_html_e( 'Refresh accessibility status', 'wsuwp-a11y-status' ); ?>)</span></a>
 				</p>
 			</div>
 			<?php
@@ -828,7 +835,7 @@ class WSUWP_A11y_Status {
 			$user_id = ( isset( $_REQUEST['user_id'] ) ) ? absint( $_REQUEST['user_id'] ) : 0;
 
 			// Check permissions. Non-admins cannot update other users' information.
-			if ( $current_user->ID === $user_id && ! current_user_can( 'list_users' ) ) {
+			if ( $current_user->ID !== $user_id && ! current_user_can( 'list_users' ) ) {
 				wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
 			}
 
@@ -889,6 +896,66 @@ class WSUWP_A11y_Status {
 		), $redirect_url );
 
 		return $redirect_url;
+	}
+
+	/**
+	 * Displays a field on the user profile screen to add a WSU NID.
+	 *
+	 * Callback method for the `edit_user_profile` and `show_user_profile`
+	 * hooks that allow adding fields and data to the user profile page for,
+	 * respectively, users viewing other user profiles and users viewing their
+	 * own profile.
+	 *
+	 * @since 0.9.0
+	 *
+	 * @param WP_User $user The WP_User object of the user being edited.
+	 * @return void
+	 */
+	public function usermeta_form_field_nid( $user ) {
+		?>
+		<h2>WSU Network ID</h2>
+		<table class="form-table">
+			<tbody>
+				<tr class="user-wsu-nid-wrap">
+					<th>
+						<label for="wsu_nid"><?php esc_html_e( 'WSU NID', 'wsuwp-a11y-status' ); ?></label>
+					</th>
+					<td>
+						<input type="text" name="wsu_nid" id="wsu_nid" aria-describedby="nid-description" value="<?php echo esc_attr( get_user_meta( $user->ID, '_wsu_nid', true ) ); ?>" class="regular-text">
+						<p class="description" id="nid-description">Enter a WSU Network ID if not using a WSU email address.</p>
+					</td>
+				</tr>
+			</tbody>
+		</table>
+		<?php
+	}
+
+	/**
+	 * Handles data submitted from the WSU NID field on the user profile screen.
+	 *
+	 * Callback method for the `edit_user_profile_update` hook, which triggers
+	 * when a user submits data to update another user's profile, and the
+	 * `personal_options_update`, which triggers when a user submits data to
+	 * update their own profile.
+	 *
+	 * @since 0.9.0
+	 *
+	 * @param int $user_id Optional. The user ID of the user being edited.
+	 * @return int|bool Meta ID if a new key was created, or true if value was updated and false on failure or no change
+	 */
+	public function usermeta_form_field_nid_update( $user_id ) {
+		check_admin_referer( 'update-user_' . $user_id );
+
+		// Check permissions.
+		if ( ! current_user_can( 'edit_user', $user_id ) ) {
+			return false;
+		}
+
+		// Sanitize input data.
+		$wsu_nid = sanitize_text_field( wp_strip_all_tags( $_POST['wsu_nid'] ) );
+
+		// Create/update user metadata for the given user ID.
+		return update_user_meta( $user_id, '_wsu_nid', $wsu_nid );
 	}
 
 }
