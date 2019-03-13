@@ -183,38 +183,36 @@ class WSUWP_A11y_Status {
 		}
 
 		$usernames = array();
-		foreach ( $wp_users as $wp_user ) {
-			/*
-			 * @todo Add a check here to try getting the WSU ID from a user
-			 *       meta field (editable on the user profile page) before
-			 *       trying to build it ourselves out of the email address.
-			 *       This will allow specifiying the WSU ID for users not
-			 *       using a WSU email address.
-			 */
 
-			// Save only the email usernames (everything to the last `@` sign).
-			$usernames[ $wp_user->ID ] = $this->wp_email_to_wsu_username( $wp_user->user_email );
+		foreach ( $wp_users as $wp_user ) {
+			$usernames[ $wp_user->ID ] = $this->get_user_wsu_nid( $wp_user );
 		}
 
 		return $usernames;
 	}
 
 	/**
-	 * Formats an email address into a WSU net ID username.
+	 * Retrieves a user's WSU net ID from the user metadata or their email.
 	 *
-	 * @since 0.8.0
+	 * Returns a saved WSU NID in the user's usermeta if it exists. If no NID
+	 * usermeta is found, it falls back to the user email address and formats
+	 * it into a WSU net ID.
 	 *
-	 * @param string $login Required. A properly formatted email address to convert.
-	 * @return string|false A sanitized username formed by dropping the domain from an email address. False if email is missing or malformed.
+	 * @since 0.9.0
+	 *
+	 * @param WP_User $user Required. A WP_User object for the user to get a NID for.
+	 * @return string A sanitized WSU network ID.
 	 */
-	private function wp_email_to_wsu_username( $login ) {
-		if ( ! is_email( $login ) ) {
-			return false;
+	private function get_user_wsu_nid( $user ) {
+		// Check for a saved WSU NID in the users usermeta.
+		$wsu_nid = get_user_meta( $user->ID, '_wsu_nid', true );
+
+		if ( ! $wsu_nid ) {
+			// If no WSU NID is found try building one out of the user email.
+			$wsu_nid = implode( explode( '@', $user->user_email, -1 ) );
 		}
 
-		$username = implode( explode( '@', $login, -1 ) );
-
-		return sanitize_user( $username );
+		return sanitize_user( $wsu_nid );
 	}
 
 	/**
@@ -262,8 +260,7 @@ class WSUWP_A11y_Status {
 	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
 	 */
 	public function update_a11y_status_by_user_id( $user_id ) {
-		$wp_user  = get_user_by( 'id', $user_id );
-		$username = $this->wp_email_to_wsu_username( $wp_user->user_email );
+		$username = $this->get_user_wsu_nid( get_user_by( 'id', $user_id ) );
 
 		// Fetch the accessibility training status data.
 		$user_status = $this->fetch_a11y_status_response( $this->url, $username );
