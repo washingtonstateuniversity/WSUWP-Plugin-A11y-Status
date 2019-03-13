@@ -938,6 +938,8 @@ class WSUWP_A11y_Status {
 	 * @return int|bool Meta ID if a new key was created, or true if value was updated and false on failure or no change
 	 */
 	public function usermeta_form_field_nid_update( $user_id ) {
+		check_admin_referer( 'update-user_' . $user_id );
+
 		// Check permissions.
 		if ( ! current_user_can( 'edit_user', $user_id ) ) {
 			return false;
