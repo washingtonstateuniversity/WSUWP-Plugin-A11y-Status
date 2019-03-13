@@ -630,12 +630,18 @@ class WSUWP_A11y_Status {
 		}
 
 		if ( $message ) {
+			$user_id    = get_current_user_id();
+			$update_uri = wp_nonce_url( add_query_arg( array(
+				'action'  => 'update_a11y_status',
+				'user_id' => $user_id,
+			) ), 'update_a11y_' . $user_id );
 			?>
 			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 				<p>
 					<strong><?php echo esc_html( $message ); ?></strong>
 					<?php echo esc_html( $expiration ); ?>
-					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training <span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training<span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+					<a class="button" href="<?php echo esc_url( $update_uri ); ?>"><?php esc_html_e( 'Refresh', 'wsuwp-a11y-status' ); ?> <span class="screen-reader-text">(<?php esc_html_e( 'Refresh accessibility status', 'wsuwp-a11y-status' ); ?>)</span></a>
 				</p>
 			</div>
 			<?php
