@@ -7,8 +7,16 @@ License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
 
-.wsuwp-a11y-status.notice a .dashicons {
+.wsuwp-a11y-status.notice a {
 	text-decoration: none;
+}
+
+.wsuwp-a11y-status.notice a .dashicons {
+	vertical-align: text-bottom;
+}
+
+.wsuwp-a11y-status.notice a.button {
+	margin-left: 1rem;
 }
 
 .column-a11y_status .dashicons-before:before {
