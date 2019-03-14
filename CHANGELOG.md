@@ -17,6 +17,12 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.9.1 (2019-03-14)
+
+### Fixed
+
+- :bug: Fix #11 Load plugin and set properties in activation method to prevent empty API URL error.
+
 ## 0.9.0 (2019-03-13)
 
 ### Fixed

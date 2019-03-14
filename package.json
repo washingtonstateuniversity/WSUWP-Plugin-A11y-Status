@@ -1,6 +1,6 @@
 {
   "name": "wsuwp-plugin-a11y-status",
-  "version": "0.9.0",
+  "version": "0.9.1",
   "repository": {
     "type": "git",
     "url": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status"
