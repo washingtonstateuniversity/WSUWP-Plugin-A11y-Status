@@ -88,7 +88,7 @@ class WSUWP_A11y_Status {
 		$user_login = $user->user_login;
 
 		// The activation hook fires before the plugin is loaded, so we have get the instance manually.
-		$instance = self::get_instance();
+		$instance = load_wsuwp_a11y_status();
 
 		// Fetch the API data on plugin activation.
 		$instance->update_a11y_status_usermeta( $user_login, $user );
