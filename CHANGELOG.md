@@ -17,6 +17,12 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.9.2 (:construction: WIP 2019-04-04)
+
+### Fixed
+
+- :bug: Fix #14 Move `get_plugin_data` into admin-only method to prevent function not defined error on non-admin pages.
+
 ## 0.9.1 (2019-03-14)
 
 ### Fixed

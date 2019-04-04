@@ -25,12 +25,12 @@ class WSUWP_A11y_Status {
 	public static $slug = 'wsuwp_a11y_status';
 
 	/**
-	 * The plugin metadata.
+	 * The plugin file basename.
 	 *
 	 * @since 0.8.0
 	 * @var array
 	 */
-	private $plugin_meta;
+	private $basename;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -154,8 +154,8 @@ class WSUWP_A11y_Status {
 	 * @since 0.8.0
 	 */
 	public function set_properties( $file ) {
-		$this->plugin_meta = get_plugin_data( $file );
-		$this->url         = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
+		$this->basename = $file;
+		$this->url      = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 	}
 
 	/**
@@ -575,7 +575,8 @@ class WSUWP_A11y_Status {
 	 * @since 0.1.0
 	 */
 	public function enqueue_scripts() {
-		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $this->plugin_meta['Version'] );
+		$plugin_meta = get_plugin_data( $this->basename );
+		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $plugin_meta['Version'] );
 	}
 
 	/**
