@@ -31,18 +31,9 @@ env:
     - WP_MULTISITE=0
     - LINT=1
 
-# # Declare non-Trusty versions of PHP to use.
-# matrix:
-#   fast-finish: true
-#   include:
-#     - php: "5.3"
-#       env: LINT=0
-#       dist: precise
-
 branches:
   only:
-    #- master DEBUG restore when its working
-    - options-and-bugfixes
+    - master
 
 sudo: false
 
@@ -76,5 +67,4 @@ script:
 notifications:
   email:
     on_success: never
-    #on_failure: change DEBUG: restore when its working
-    on_failure: never
+    on_failure: change
