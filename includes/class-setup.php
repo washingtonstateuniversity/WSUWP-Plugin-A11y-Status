@@ -670,7 +670,7 @@ class WSUWP_A11y_Status {
 		}
 
 		if ( 'update_a11y_status_selected' === $_REQUEST['action'] ) {
-			if ( 0 < $_REQUEST['success'] ) {
+			if ( isset( $_REQUEST['success'] ) && 0 < $_REQUEST['success'] ) {
 				$messages[] = array(
 					'class' => 'notice-success',
 					'text'  => sprintf(
@@ -681,7 +681,7 @@ class WSUWP_A11y_Status {
 				);
 			}
 
-			if ( 0 < $_REQUEST['fail'] ) {
+			if ( isset( $_REQUEST['fail'] ) && 0 < $_REQUEST['fail'] ) {
 				$messages[] = array(
 					'class' => 'notice-error',
 					'text'  => sprintf(
