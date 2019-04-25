@@ -113,15 +113,12 @@ class WSUWP_A11y_Status {
 			return;
 		}
 
-		if ( __FILE__ !== WP_UNINSTALL_PLUGIN ) {
-			return;
-		}
-
 		// Delete all user metadata saved by the plugin.
 		$users = get_users( array( 'fields' => array( 'ID' ) ) );
 
 		foreach ( $users as $user ) {
 			self::flush_a11y_status_usermeta( absint( $user->ID ) );
+			delete_user_meta( absint( $user->ID ), '_wsu_nid' );
 		}
 	}
 
