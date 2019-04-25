@@ -632,7 +632,7 @@ class WSUWP_A11y_Status {
 			$update_uri = wp_nonce_url( add_query_arg( array(
 				'action'  => 'update_a11y_status',
 				'user_id' => $user_id,
-			) ), 'update_a11y_' . $user_id );
+			), admin_url() ), 'update_a11y_' . $user_id );
 			?>
 			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 				<p>
@@ -818,7 +818,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.6.0
 	 *
-	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
+	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed or null if the wrong request.
 	 */
 	public function handle_a11y_status_actions() {
 
@@ -844,9 +844,11 @@ class WSUWP_A11y_Status {
 
 			// Checks completed, go ahead and update the user's a11y status data.
 			$updated = $this->update_a11y_status_by_user_id( $user_id );
+
+			return $updated;
 		}
 
-		return $this->wsu_api_response;
+		return;
 	}
 
 	/**
