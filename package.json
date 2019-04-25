@@ -1,6 +1,6 @@
 {
   "name": "wsuwp-plugin-a11y-status",
-  "version": "0.9.1",
+  "version": "0.9.2",
   "repository": {
     "type": "git",
     "url": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status"
@@ -31,6 +31,6 @@
     "postcss-cli": "^6.1.2",
     "postcss-preset-env": "^6.6.0",
     "rimraf": "^2.6.x",
-    "stylelint": "^9.10.x"
+    "stylelint": "^10.0.1"
   }
 }
