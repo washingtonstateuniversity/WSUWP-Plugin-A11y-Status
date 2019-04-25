@@ -1,0 +1,80 @@
+# Travis CI configuration
+# @link https://travis-ci.org/
+# WSUWP Plugin A11y Status
+# @link https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status
+
+language: php
+
+dist: trusty
+
+# Cache some data across builds for performance.
+# https://docs.travis-ci.com/user/caching/
+cache:
+  apt: true
+  npm: true
+  directories:
+    # Cache directory for older Composer versions.
+    - $HOME/.composer/cache
+    # Cache directory for more recent Composer versions.
+    - $HOME/.cache/composer/files
+
+# PHP versions to build on.
+php:
+  - 7.3
+  - 7.2
+  - 7.1
+  - 5.6
+
+env:
+  global:
+    - WP_VERSION=5.0
+    - WP_MULTISITE=0
+    - LINT=1
+
+# # Declare non-Trusty versions of PHP to use.
+# matrix:
+#   fast-finish: true
+#   include:
+#     - php: "5.3"
+#       env: LINT=0
+#       dist: precise
+
+branches:
+  only:
+    #- master DEBUG restore when its working
+    - options-and-bugfixes
+
+sudo: false
+
+before_install:
+  # Speed up build time by disabling Xdebug.
+  - phpenv config-rm xdebug.ini || echo 'No xdebug config.'
+  # Make sure NPM is installed
+  - npm i -g npm
+
+install:
+  - cd $TRAVIS_BUILD_DIR
+  # Install PHP_CodeSniffer and WP Coding Standards
+  - if [[ "$LINT" == "1" ]]; then composer install --no-suggest; fi
+  # Workaround for an outdated dependency only showing during Travis build.
+  - if [[ "$LINT" == "1" ]]; then npm install har-validator@latest --save-dev; fi
+  # NPM install for ci environments @link https://docs.npmjs.com/cli/ci.html
+  - if [[ "$LINT" == "1" ]]; then npm ci; fi
+
+before_script:
+  # Refresh path following CodeSniffer install.
+  - phpenv rehash;
+
+script:
+  # Search theme for PHP syntax errors @see https://github.com/WordPress/twentynineteen/
+  # The usage of bash + || exit 1 is to ensure xargs does not exit on first error.
+  - find . \( -name '*.php' \) -not -path "./vendor/*" | xargs -n1 bash -c 'php -lf $0 || exit 1'
+  # Search for PHP, JS, and CSS errors with linting and coding standards checks.
+  # Then test building the production version of the theme.
+  - if [[ "$LINT" == "1" ]]; then npm run build; fi
+
+notifications:
+  email:
+    on_success: never
+    #on_failure: change DEBUG: restore when its working
+    on_failure: never
