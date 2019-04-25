@@ -847,8 +847,6 @@ class WSUWP_A11y_Status {
 
 			return $updated;
 		}
-
-		return;
 	}
 
 	/**
