@@ -17,6 +17,18 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 0.10.0-beta01 (:construction: 2019-04-25)
+
+### Fixed
+
+- :bug: Fix #16 Let empty bulk user list actions fail silently.
+- :bug: Fix #10 Direct refresh a11y status from admin notice message button to admin home to prevent errors on select pages.
+- :bug: Fix #12 Delete usermeta on uninstall.
+
+### Changed
+
+- Clean up status actions handler to prevent returning excess unneeded data.
+
 ## 0.9.2 (2019-04-25)
 
 ### Fixed
