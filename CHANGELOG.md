@@ -17,17 +17,23 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 0.10.0-beta01 (:construction: 2019-04-25)
+## 0.10.0-beta02 (:construction: 2019-04-25)
 
 ### Fixed
 
+- :green_heart: Fix PHP linting errors found in initial CI test and following PHP rules update.
 - :bug: Fix #16 Let empty bulk user list actions fail silently.
 - :bug: Fix #10 Direct refresh a11y status from admin notice message button to admin home to prevent errors on select pages.
 - :bug: Fix #12 Delete usermeta on uninstall.
 
 ### Changed
 
+:arrow_up: Upgrade Composer dev dependencies (including PHP linting and CS rules).
 - Clean up status actions handler to prevent returning excess unneeded data.
+
+### Added
+
+- :wrench: Configure Travis CI testing on master branch, close #9.
 
 ## 0.9.2 (2019-04-25)
 
