@@ -113,15 +113,12 @@ class WSUWP_A11y_Status {
 			return;
 		}
 
-		if ( __FILE__ !== WP_UNINSTALL_PLUGIN ) {
-			return;
-		}
-
 		// Delete all user metadata saved by the plugin.
 		$users = get_users( array( 'fields' => array( 'ID' ) ) );
 
 		foreach ( $users as $user ) {
 			self::flush_a11y_status_usermeta( absint( $user->ID ) );
+			delete_user_meta( absint( $user->ID ), '_wsu_nid' );
 		}
 	}
 
@@ -309,11 +306,14 @@ class WSUWP_A11y_Status {
 		$response_code = wp_remote_retrieve_response_code( $raw_response );
 
 		if ( 200 !== (int) $response_code ) {
-			$this->error( sprintf(
-				'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s',
-				esc_url_raw( $request_uri ),
-				$response_code
-			) );
+			$this->error(
+				sprintf(
+					/* translators: 1: the API requst URL, 2: an HTTP error response code */
+					__( 'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s', 'wsuwp-a11y-status' ),
+					esc_url_raw( $request_uri ),
+					$response_code
+				)
+			);
 
 			return false;
 		}
@@ -632,10 +632,16 @@ class WSUWP_A11y_Status {
 
 		if ( $message ) {
 			$user_id    = get_current_user_id();
-			$update_uri = wp_nonce_url( add_query_arg( array(
-				'action'  => 'update_a11y_status',
-				'user_id' => $user_id,
-			) ), 'update_a11y_' . $user_id );
+			$update_uri = wp_nonce_url(
+				add_query_arg(
+					array(
+						'action'  => 'update_a11y_status',
+						'user_id' => $user_id,
+					),
+					admin_url()
+				),
+				'update_a11y_' . $user_id
+			);
 			?>
 			<div class="wsuwp-a11y-status notice <?php echo esc_attr( $class ); ?>">
 				<p>
@@ -658,7 +664,7 @@ class WSUWP_A11y_Status {
 	 * @return void
 	 */
 	public function user_a11y_status_notice__action() {
-		// phpcs:disable WordPress.Security.NonceVerification.NoNonceVerification
+		// phpcs:disable WordPress.Security.NonceVerification.Recommended
 		if ( ! isset( $_REQUEST['action'] ) ) {
 			return;
 		}
@@ -673,7 +679,7 @@ class WSUWP_A11y_Status {
 		}
 
 		if ( 'update_a11y_status_selected' === $_REQUEST['action'] ) {
-			if ( 0 < $_REQUEST['success'] ) {
+			if ( isset( $_REQUEST['success'] ) && 0 < $_REQUEST['success'] ) {
 				$messages[] = array(
 					'class' => 'notice-success',
 					'text'  => sprintf(
@@ -684,7 +690,7 @@ class WSUWP_A11y_Status {
 				);
 			}
 
-			if ( 0 < $_REQUEST['fail'] ) {
+			if ( isset( $_REQUEST['fail'] ) && 0 < $_REQUEST['fail'] ) {
 				$messages[] = array(
 					'class' => 'notice-error',
 					'text'  => sprintf(
@@ -787,10 +793,15 @@ class WSUWP_A11y_Status {
 	public function add_a11y_status_user_row_action( $actions, $user_object ) {
 		if ( current_user_can( 'list_users' ) ) {
 
-			$update_uri = wp_nonce_url( add_query_arg( array(
-				'action'  => 'update_a11y_status',
-				'user_id' => $user_object->ID,
-			) ), 'update_a11y_' . $user_object->ID );
+			$update_uri = wp_nonce_url(
+				add_query_arg(
+					array(
+						'action'  => 'update_a11y_status',
+						'user_id' => $user_object->ID,
+					)
+				),
+				'update_a11y_' . $user_object->ID
+			);
 
 			$actions['update_a11y_status'] = '<a class="dashicons-before dashicons-update" href="' . esc_url( $update_uri ) . '">' . esc_html__( 'A11y', 'wsuwp-a11y-status' ) . ' <span class="screen-reader-text">(' . esc_html__( 'Refresh accessibility status', 'wsuwp-a11y-status' ) . ')</a>';
 		}
@@ -821,7 +832,7 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.6.0
 	 *
-	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
+	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed or null if the wrong request.
 	 */
 	public function handle_a11y_status_actions() {
 
@@ -847,9 +858,9 @@ class WSUWP_A11y_Status {
 
 			// Checks completed, go ahead and update the user's a11y status data.
 			$updated = $this->update_a11y_status_by_user_id( $user_id );
-		}
 
-		return $this->wsu_api_response;
+			return $updated;
+		}
 	}
 
 	/**
@@ -890,11 +901,14 @@ class WSUWP_A11y_Status {
 		}
 		$unsuccessful = count( $user_ids ) - $successful;
 
-		$redirect_url = add_query_arg( array(
-			'action'  => 'update_a11y_status_selected',
-			'success' => $successful,
-			'fail'    => $unsuccessful,
-		), $redirect_url );
+		$redirect_url = add_query_arg(
+			array(
+				'action'  => 'update_a11y_status_selected',
+				'success' => $successful,
+				'fail'    => $unsuccessful,
+			),
+			$redirect_url
+		);
 
 		return $redirect_url;
 	}
