@@ -27,7 +27,7 @@ if ( ! defined( 'WPINC' ) ) {
 require_once __DIR__ . '/includes/class-setup.php';
 
 // Starts things up.
-add_action( 'plugins_loaded', __NAMESPACE__ . '\load_wsuwp_a11y_status' );
+add_action( 'plugins_loaded', __NAMESPACE__ . '\load' );
 
 // Flushes rules on activation and cleans up on deactivation.
 register_activation_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'activate' ) );
@@ -41,7 +41,7 @@ register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninst
  *
  * @return Setup An instance of the Setup class.
  */
-function load_wsuwp_a11y_status() {
+function load() {
 	$wsuwp_a11y_status = Init\Setup::get_instance();
 	$wsuwp_a11y_status->setup_hooks();
 	$wsuwp_a11y_status->set_properties( __FILE__ );
