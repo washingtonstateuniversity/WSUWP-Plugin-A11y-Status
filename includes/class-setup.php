@@ -1,10 +1,12 @@
 <?php
 /**
- * WSUWP A11y Status Setup: WSUWP_A11y_Status class
+ * WSUWP A11y Status Setup: Setup class
  *
- * @package WSUWP_A11y_Status
+ * @package Setup
  * @since 0.1.0
  */
+
+namespace WSUWP\A11yStatus\Init;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -15,7 +17,7 @@ if ( ! defined( 'ABSPATH' ) ) {
  *
  * @since 0.1.0
  */
-class WSUWP_A11y_Status {
+class Setup {
 	/**
 	 * The plugin slug.
 	 *
@@ -53,13 +55,13 @@ class WSUWP_A11y_Status {
 	 *
 	 * @since 0.1.0
 	 *
-	 * @return WSUWP_A11y_Status An instance of the WSUWP_A11y_Status class.
+	 * @return Setup An instance of the Setup class.
 	 */
 	public static function get_instance() {
 		static $instance;
 
 		if ( ! isset( $instance ) ) {
-			$instance = new WSUWP_A11y_Status();
+			$instance = new Setup();
 		}
 
 		return $instance;
@@ -826,7 +828,7 @@ class WSUWP_A11y_Status {
 	/**
 	 * Routes actions based on the "action" query variable.
 	 *
-	 * Called on the `admin_init` hook, this will call the WSUWP_A11y_Status
+	 * Called on the `admin_init` hook, this will call the Setup
 	 * class update_a11y_status_by_user_id() method for the requested user ID
 	 * to update that user's WSU accessibility training user metadata.
 	 *
