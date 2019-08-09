@@ -11,6 +11,7 @@
 
 namespace WSUWP\A11yStatus\WSU_API;
 use WSUWP\A11yStatus\Init;
+use WSUWP\A11yStatus\formatting;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -26,9 +27,17 @@ class WSU_API {
 	 * The WSU Accessibility Training API response.
 	 *
 	 * @since 0.1.0
+	 * @var array|WP_Error
+	 */
+	protected $wsu_api_response;
+
+	/**
+	 * The API request result.
+	 *
+	 * @since 1.0.0
 	 * @var array
 	 */
-	private $wsu_api_response;
+	protected $result;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -46,14 +55,6 @@ class WSU_API {
 	 * @var string[]
 	 */
 	protected $api_nid;
-
-	/**
-	 * The raw API request response.
-	 *
-	 * @since 1.0.0
-	 * @var string
-	 */
-	protected $api_response;
 
 	/**
 	 * Whether a connection has been made.
@@ -87,7 +88,7 @@ class WSU_API {
  	 *   'Expires'        => (DateTime) the expiration date
  	 *   'trainingURL'    => (string)   the training URL
  	 *   'last_checked'   => (string)   the date last checked in mysql format
- 	 *   'ever_certified' => (bool)     whether the user was ever certified
+ 	 *   'was_certified' => (bool)     whether the user was ever certified
  	 * )
  	 *
  	 * @since 1.0.0
@@ -100,17 +101,19 @@ class WSU_API {
  		// Build the request URI.
 		$request_uri = add_query_arg( array( 'NID' => $this->api_nid ), $this->api_url );
 
- 		$this->api_response = wp_remote_get( esc_url_raw( $request_uri ) );
+ 		$this->wsu_api_response = wp_remote_get( esc_url_raw( $request_uri ) );
 
- 		if ( is_wp_error( $this->api_response ) ) {
- 			Init\Setup::error( $this->api_response->get_error_message() );
+		// Check for a successful response.
+		if ( is_wp_error( $this->wsu_api_response ) ) {
+ 			Init\Setup::error( $this->wsu_api_response->get_error_message() );
 
  			return false;
  		}
 
- 		$response_code = wp_remote_retrieve_response_code( $this->api_response );
+		$response_code = wp_remote_retrieve_response_code( $this->wsu_api_response );
 
- 		if ( 200 !== (int) $response_code ) {
+		// Check for a successful connection.
+		if ( 200 !== (int) $response_code ) {
  			Init\Setup::error(
  				sprintf(
  					/* translators: 1: the API requst URL, 2: an HTTP error response code */
@@ -123,24 +126,13 @@ class WSU_API {
  			return false;
  		}
 
- 		$response = json_decode( wp_remote_retrieve_body( $this->api_response ), true );
+		// Parse the desired content from the API response.
+ 		$this->result = json_decode( wp_remote_retrieve_body( $this->wsu_api_response ), true );
+		$this->result = array_shift( $this->result );
 
- 		$user_status = array_shift( $response );
+		// Sanitize API data for saving in the database.
+		$this->result = formatting\sanitize_wsu_api_response( $this->result );
 
- 		/*
- 		 * Sanitize API data for saving in the database and insert helper data.
- 		 */
- 		if ( 'True' === $user_status['isCertified'] ) {
- 			$user_status['isCertified']    = true;
- 			$user_status['ever_certified'] = true;
- 		} else {
- 			$user_status['isCertified'] = false;
- 		}
-
- 		$user_status['Expires']      = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
- 		$user_status['last_checked'] = current_time( 'mysql' );
- 		$user_status['trainingURL']  = esc_url_raw( $user_status['trainingURL'] );
-
- 		return $user_status;
+		return $this->result;
  	}
 }

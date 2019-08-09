@@ -132,6 +132,9 @@ class Setup {
 	public function includes() {
 		// The WSU API handler class.
 		require __DIR__ . '/class-wsu-api.php';
+
+		// The plugin formatting API.
+		require __DIR__ . '/formatting.php';
 	}
 
 	/**
@@ -218,6 +221,7 @@ class Setup {
 	public function update_a11y_status_usermeta( $user_login, $user ) {
 
 		$users = $this->get_usernames_list( $user );
+		$url   = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 
 		foreach ( $users as $user_id => $username ) {
 			// Only fetch new data for certified users when nearing expiration.
@@ -226,7 +230,8 @@ class Setup {
 			}
 
 			// Fetch the accessibility training status data.
-			$user_status = $this->fetch_a11y_status_response( $this->url, $username );
+			//$user_status = $this->fetch_a11y_status_response( $this->url, $username );
+			$user_status = new WSU_API\WSU_API( $url, $username );
 
 			// Save the accessibility training status to user metadata.
 			$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
@@ -412,7 +417,7 @@ class Setup {
 	public static function was_user_certified( $user_id = '' ) {
 		$user_status = self::get_user_a11y_status( $user_id );
 
-		if ( ! empty( $user_status['ever_certified'] ) ) {
+		if ( ! empty( $user_status['was_certified'] ) ) {
 			return true;
 		}
 
