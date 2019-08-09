@@ -98,11 +98,7 @@ class WSU_API {
  	 */
  	public function fetch_api_response() {
  		// Build the request URI.
- 		$request_uri = sprintf(
-			'%1$s?NID=%2$s',
-			$this->api_url,
-			$this->api_nid
-		);
+		$request_uri = add_query_arg( array( 'NID' => $this->api_nid ), $this->api_url );
 
  		$this->api_response = wp_remote_get( esc_url_raw( $request_uri ) );
 
