@@ -7,6 +7,7 @@
  */
 
 namespace WSUWP\A11yStatus\Init;
+
 use WSUWP\A11yStatus\WSU_API;
 use WSUWP\A11yStatus\user;
 
@@ -43,11 +44,13 @@ class Setup {
 	 *
 	 * @return Setup An instance of the Setup class.
 	 */
-	public static function get_instance() {
+	public static function get_instance( $file ) {
 		static $instance;
 
 		if ( ! isset( $instance ) ) {
 			$instance = new Setup();
+
+			$instance->basename = $file;
 		}
 
 		return $instance;
@@ -137,15 +140,6 @@ class Setup {
 
 		// The plugin user API.
 		require __DIR__ . '/user.php';
-	}
-
-	/**
-	 * Sets the WSUWP A11y Status default properties.
-	 *
-	 * @since 0.8.0
-	 */
-	public function set_properties( $file ) {
-		$this->basename = $file;
 	}
 
 	/**
