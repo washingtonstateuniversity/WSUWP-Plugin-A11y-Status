@@ -7,6 +7,7 @@
  */
 
 namespace WSUWP\A11yStatus\user;
+
 use WSUWP\A11yStatus\Init;
 use WSUWP\A11yStatus\WSU_API;
 
@@ -57,8 +58,8 @@ function handle_user_login( $user_login, $user ) {
  * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
  */
 function update_a11y_user_meta( $user ) {
-	if ( is_int( $user) ) {
-		$user = get_user_by( 'id', $user_id );
+	if ( is_int( $user ) ) {
+		$user = get_user_by( 'id', $user );
 	}
 
 	$username = get_user_wsu_nid( $user );
