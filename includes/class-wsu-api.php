@@ -24,20 +24,20 @@ if ( ! defined( 'ABSPATH' ) ) {
  */
 class WSU_API {
 	/**
+	 * The API request result.
+	 *
+	 * @since 1.0.0
+	 * @var array
+	 */
+	public $result;
+
+	/**
 	 * The WSU Accessibility Training API response.
 	 *
 	 * @since 0.1.0
 	 * @var array|WP_Error
 	 */
 	protected $wsu_api_response;
-
-	/**
-	 * The API request result.
-	 *
-	 * @since 1.0.0
-	 * @var array
-	 */
-	protected $result;
 
 	/**
 	 * The WSU Accessibility Training API endpoint.
@@ -55,14 +55,6 @@ class WSU_API {
 	 * @var string[]
 	 */
 	protected $api_nid;
-
-	/**
-	 * Whether a connection has been made.
-	 *
-	 * @since 1.0.0
-	 * @var bool
-	 */
-	private $has_connected = false;
 
 	/**
 	 * Connects to the API and does stuff
