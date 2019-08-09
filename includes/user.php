@@ -50,6 +50,31 @@ function handle_user_login( $user_login, $user ) {
 }
 
 /**
+ * Gets the full a11y user meta value of the given user.
+ *
+ * Takes a WordPress user ID and retrieves the full WSU accessibility training
+ * status data for that user if it exists in the user metadata.
+ *
+ * @since 0.5.0
+ *
+ * @param WP_User $user Optional. The WP_User object of a user to check. Defaults to the current user.
+ * @return array|false The accessibility status data for the given user or false if the user data is not found.
+ */
+function get_a11y_user_meta( $user = '' ) {
+	if ( '' === $user ) {
+		$user = wp_get_current_user();
+	}
+
+	$a11y_status = get_user_meta( $user->ID, Init\Setup::$slug, true );
+
+	if ( ! empty( $a11y_status ) ) {
+		return $a11y_status;
+	}
+
+	return false;
+}
+
+/**
  * Updates an individual user's metadata with their WSU A11y Training status.
  *
  * @since 0.6.0
@@ -72,4 +97,18 @@ function update_a11y_user_meta( $user ) {
 
 	// Save the accessibility training status to user metadata.
 	return update_user_meta( $user->ID, Init\Setup::$slug, $user_status->result );
+}
+
+/**
+ * Deletes the 'wsuwp_a11y_status' usermeta for the given user.
+ *
+ * @since 0.5.0
+ *
+ * @param WP_User $user Required. The WP_User instance of the user to delete metadata for.
+ * @return bool True if successful, false if not.
+ */
+function delete_a11y_user_meta( $user ) {
+	$deleted = delete_user_meta( $user->ID, Init\Setup::$slug );
+
+	return $deleted;
 }
