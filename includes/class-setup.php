@@ -149,39 +149,6 @@ class Setup {
 	}
 
 	/**
-	 * Builds the list of username(s) (WSU IDs) to check.
-	 *
-	 * Super Admins and Administrators -- or anyone with the capability to
-	 * access the admin Users screen -- will need to collect the accessibility
-	 * training status of all registered users. All other users should only
-	 * gather data from the API for themselves.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param WP_User $current_user A WP User object instance of the current user.
-	 * @return string[] An associative array of user_id => wsu_nid key-value pairs.
-	 */
-	private function get_usernames_list( $current_user ) {
-
-		// Use WP_User object because current_user_can() isn't available yet.
-		if ( $current_user->allcaps['list_users'] ) {
-			// Add all users to the users array if current user is (super)admin.
-			$wp_users = get_users( array( 'fields' => array( 'ID', 'user_email' ) ) );
-		} else {
-			// Add only the current user to the users array if not an admin.
-			$wp_users[] = $current_user;
-		}
-
-		$usernames = array();
-
-		foreach ( $wp_users as $wp_user ) {
-			$usernames[ $wp_user->ID ] = $this->get_user_wsu_nid( $wp_user );
-		}
-
-		return $usernames;
-	}
-
-	/**
 	 * Gets the full a11y certification status of the given user.
 	 *
 	 * Takes a WordPress user ID and retrieves the full WSU accessibility
