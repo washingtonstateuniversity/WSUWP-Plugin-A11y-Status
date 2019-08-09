@@ -17,6 +17,22 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 1.0.0-alpha-2 (:construction: 2019-08-09)
+
+### Changed
+
+- :truck: Move all user-related functions, like getting/setting user meta, to a dedicated User API file.
+- Simplify setting the plugin basename value in the Setup class.
+- :recycle: Standardize user a11y meta methods to use similar syntax.
+- :truck: Move sanitizing and formatting methods to a dedicated formatting API file.
+- :truck: Move API handler from the setup class to a dedicated API class.
+- Use namespaces in all PHP files.
+
+### Removed
+
+- :fire: Not fetching data for all users so remove the `get_usernames_list` method.
+- Fix #22 Don't automatically fetch accessibility status data for all users on plugin activation or login.
+
 ## 0.10.0 (2019-08-07)
 
 ### Fixed
