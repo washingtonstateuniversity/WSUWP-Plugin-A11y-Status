@@ -42,10 +42,9 @@ register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninst
  * @return Setup An instance of the Setup class.
  */
 function load() {
-	$wsuwp_a11y_status = Init\Setup::get_instance();
+	$wsuwp_a11y_status = Init\Setup::get_instance( __FILE__ );
 	$wsuwp_a11y_status->setup_hooks();
 	$wsuwp_a11y_status->includes();
-	$wsuwp_a11y_status->set_properties( __FILE__ );
 
 	return $wsuwp_a11y_status;
 }
