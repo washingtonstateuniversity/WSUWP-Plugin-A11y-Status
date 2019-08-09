@@ -97,7 +97,7 @@ class Setup {
 		$users = get_users( array( 'fields' => array( 'ID' ) ) );
 
 		foreach ( $users as $user ) {
-			self::flush_a11y_status_usermeta( absint( $user->ID ) );
+			user\delete_a11y_user_meta( $user );
 			delete_user_meta( absint( $user->ID ), '_wsu_nid' );
 		}
 	}
@@ -143,29 +143,6 @@ class Setup {
 	}
 
 	/**
-	 * Gets the full a11y certification status of the given user.
-	 *
-	 * Takes a WordPress user ID and retrieves the full WSU accessibility
-	 * training status data for that user if it exists in the user metadata.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return array|false The accessibility status data for the given user or false if the user data is not found.
-	 */
-	public static function get_user_a11y_status( $user_id = '' ) {
-		$user_id = ( '' !== $user_id ) ? absint( $user_id ) : get_current_user_id();
-
-		$a11y_status = get_user_meta( $user_id, self::$slug, true );
-
-		if ( ! empty( $a11y_status ) ) {
-			return $a11y_status;
-		}
-
-		return false;
-	}
-
-	/**
 	 * Gets the URL to the WSU Accessibility Training course.
 	 *
 	 * Note: This returns an unescaped URL string. Users should handle escaping
@@ -177,7 +154,7 @@ class Setup {
 	 * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
 	 */
 	private function get_user_a11y_training_url( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status ) ) {
 			return $user_status['trainingURL'];
@@ -198,7 +175,7 @@ class Setup {
 	 * @return string|false The expiration date for the given user or false if no data.
 	 */
 	public static function get_user_a11y_expiration_date( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status ) ) {
 			return date_format( $user_status['Expires'], get_option( 'date_format' ) );
@@ -222,7 +199,7 @@ class Setup {
 	 * @return string|false The time remaining until a11y certification expires for the given user or false if no data.
 	 */
 	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status ) ) {
 			return human_time_diff( date_format( $user_status['Expires'], 'U' ) );
@@ -245,7 +222,7 @@ class Setup {
 	 * @return string|false A string containing the number of days remaining in human-readable format or "0 days" if the period has expired. False if no data found or user is certified.
 	 */
 	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( empty( $user_status ) || ! $user_status['isCertified'] ) {
 			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
@@ -276,7 +253,7 @@ class Setup {
 	 * @return bool True if the user is certified, false if not or if the data is not found.
 	 */
 	public static function is_user_certified( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
 			return true;
@@ -294,7 +271,7 @@ class Setup {
 	 * @return bool True if the user has ever been certified and false if not.
 	 */
 	public static function was_user_certified( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status['was_certified'] ) ) {
 			return true;
@@ -312,7 +289,7 @@ class Setup {
 	 * @return bool True if the user's certification expires in less than one month and false if not, or if the data is not found.
 	 */
 	public static function is_user_a11y_lt_one_month( $user_id = '' ) {
-		$user_status = self::get_user_a11y_status( $user_id );
+		$user_status = self::get_a11y_user_meta( $user_id );
 
 		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
 			$diff = $user_status['Expires']->diff( date_create() );
@@ -323,20 +300,6 @@ class Setup {
 		}
 
 		return false;
-	}
-
-	/**
-	 * Deletes the 'wsuwp_a11y_status' usermeta for the given user.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param int $user_id The WP user ID of the user to delete metadata for.
-	 * @return bool True if successful, false if not.
-	 */
-	public static function flush_a11y_status_usermeta( $user_id ) {
-		$deleted = delete_user_meta( $user_id, self::$slug );
-
-		return $deleted;
 	}
 
 	/**
@@ -549,7 +512,7 @@ class Setup {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$last_checked = self::get_user_a11y_status( $user_id )['last_checked'];
+			$last_checked = self::get_a11y_user_meta( $user_id )['last_checked'];
 
 			if ( ! self::is_user_certified( $user_id ) ) {
 				if ( self::was_user_certified( $user_id ) ) {
