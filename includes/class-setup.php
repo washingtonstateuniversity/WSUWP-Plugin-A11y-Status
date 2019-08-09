@@ -7,6 +7,7 @@
  */
 
 namespace WSUWP\A11yStatus\Init;
+use WSUWP\A11yStatus\WSU_API;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -34,20 +35,7 @@ class Setup {
 	 */
 	private $basename;
 
-	/**
-	 * The WSU Accessibility Training API endpoint.
-	 *
-	 * @since 0.1.0
-	 * @var string
-	 */
-	private $url;
-
-	/**
-	 * The WSU Accessibility Training API response.
-	 *
-	 * @since 0.1.0
-	 * @var array
-	 */
+	// DEBUG: Remove when API refactoring is finished
 	private $wsu_api_response;
 
 	/**
@@ -137,13 +125,22 @@ class Setup {
 	}
 
 	/**
+	 * Includes required files.
+	 *
+	 * @since 1.0.0
+	 */
+	public function includes() {
+		// The WSU API handler class.
+		require __DIR__ . '/class-wsu-api.php';
+	}
+
+	/**
 	 * Sets the WSUWP A11y Status default properties.
 	 *
 	 * @since 0.8.0
 	 */
 	public function set_properties( $file ) {
 		$this->basename = $file;
-		$this->url      = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 	}
 
 	/**
@@ -249,85 +246,16 @@ class Setup {
 	 */
 	public function update_a11y_status_by_user_id( $user_id ) {
 		$username = $this->get_user_wsu_nid( get_user_by( 'id', $user_id ) );
+		$url      = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
 
 		// Fetch the accessibility training status data.
-		$user_status = $this->fetch_a11y_status_response( $this->url, $username );
+		//$user_status = $this->fetch_a11y_status_response( $this->url, $username );
+		$user_status = new WSU_API\WSU_API( $url, $username );
 
 		// Save the accessibility training status to user metadata.
 		$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
 
 		return $this->wsu_api_response;
-	}
-
-	/**
-	 * Gets the WSU Accessibility Training status info from the WSU API.
-	 *
-	 * Connect to the API to retrieve info for given username(s) in JSON
-	 * format and parse it, then add several additional items to the resulting
-	 * array and return it. The returned array should include the following
-	 * key-value pairs:
-	 *
-	 * (
-	 *   'isCertified'    => (bool)     whether the user is a11y certified
-	 *   'Expires'        => (DateTime) the expiration date
-	 *   'trainingURL'    => (string)   the training URL
-	 *   'last_checked'   => (string)   the date last checked in mysql format
-	 *   'ever_certified' => (bool)     whether the user was ever certified
-	 * )
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param string $url      The WSU Accessibility Training Status API url.
-	 * @param string $username The WSU NID of the user to retrieve data for.
-	 * @return array|false Array of accessibility training status data for the given username.
-	 */
-	private function fetch_a11y_status_response( $url, $username ) {
-
-		// Build the request URI on a per-user basis.
-		$request_uri = sprintf( '%1$s?NID=%2$s', $url, $username );
-
-		$raw_response = wp_remote_get( esc_url_raw( $request_uri ) );
-
-		if ( is_wp_error( $raw_response ) ) {
-			$this->error( $raw_response->get_error_message() );
-
-			return false;
-		}
-
-		$response_code = wp_remote_retrieve_response_code( $raw_response );
-
-		if ( 200 !== (int) $response_code ) {
-			$this->error(
-				sprintf(
-					/* translators: 1: the API requst URL, 2: an HTTP error response code */
-					__( 'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s', 'wsuwp-a11y-status' ),
-					esc_url_raw( $request_uri ),
-					$response_code
-				)
-			);
-
-			return false;
-		}
-
-		$response = json_decode( wp_remote_retrieve_body( $raw_response ), true );
-
-		$user_status = array_shift( $response );
-
-		/*
-		 * Sanitize API data for saving in the database and insert helper data.
-		 */
-		if ( 'True' === $user_status['isCertified'] ) {
-			$user_status['isCertified']    = true;
-			$user_status['ever_certified'] = true;
-		} else {
-			$user_status['isCertified'] = false;
-		}
-
-		$user_status['Expires']      = date_create_from_format( 'M j Y g:iA', $user_status['Expires'] );
-		$user_status['last_checked'] = current_time( 'mysql' );
-		$user_status['trainingURL']  = esc_url_raw( $user_status['trainingURL'] );
-
-		return $user_status;
 	}
 
 	/**
@@ -440,7 +368,7 @@ class Setup {
 
 			$registration = date_create( $wp_user->user_registered );
 
-			$end   = $registration->add( new DateInterval( 'P30D' ) );
+			$end   = $registration->add( new \DateInterval( 'P30D' ) );
 			$today = date_create();
 
 			if ( $today > $end ) {
@@ -536,7 +464,7 @@ class Setup {
 	 * @param string          $error_code Optional. A computer-readable string to identify the error.
 	 * @return void|false The HTML formatted error message if debug display is enabled and false if not.
 	 */
-	private function error( $message, $error_code = '500' ) {
+	public static function error( $message, $error_code = '500' ) {
 		if ( ! WP_DEBUG || ! WP_DEBUG_DISPLAY || ! current_user_can( 'install_plugins' ) ) {
 			return false;
 		}

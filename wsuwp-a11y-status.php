@@ -20,7 +20,7 @@ if ( ! defined( 'WPINC' ) ) {
 }
 
 /**
- * Loads the core plugin class.
+ * Loads the core plugin Setup class.
  *
  * @since 0.1.0
  */
@@ -35,7 +35,7 @@ register_deactivation_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'dea
 register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninstall' ) );
 
 /**
- * Creates an instance of the WSUWP A11y Status class.
+ * Creates an instance of the Setup class.
  *
  * @since 0.1.0
  *
@@ -44,6 +44,7 @@ register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninst
 function load() {
 	$wsuwp_a11y_status = Init\Setup::get_instance();
 	$wsuwp_a11y_status->setup_hooks();
+	$wsuwp_a11y_status->includes();
 	$wsuwp_a11y_status->set_properties( __FILE__ );
 
 	return $wsuwp_a11y_status;
