@@ -8,6 +8,7 @@
 
 namespace WSUWP\A11yStatus\Init;
 use WSUWP\A11yStatus\WSU_API;
+use WSUWP\A11yStatus\user;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -34,9 +35,6 @@ class Setup {
 	 * @var array
 	 */
 	private $basename;
-
-	// DEBUG: Remove when API refactoring is finished
-	private $wsu_api_response;
 
 	/**
 	 * Instantiates WSUWP A11y Status singleton.
@@ -107,8 +105,9 @@ class Setup {
 	 * @since 0.1.0
 	 */
 	public function setup_hooks() {
-		add_action( 'wp_login', array( $this, 'update_a11y_status_usermeta' ), 10, 2 );
-		add_action( 'user_register', array( $this, 'update_a11y_status_by_user_id' ), 10, 1 );
+		add_action( 'wp_login', 'WSUWP\A11yStatus\user\handle_user_login', 10, 2 );
+		add_action( 'user_register', 'WSUWP\A11yStatus\user\update_a11y_user_meta', 10, 1 );
+
 		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
@@ -135,6 +134,9 @@ class Setup {
 
 		// The plugin formatting API.
 		require __DIR__ . '/formatting.php';
+
+		// The plugin user API.
+		require __DIR__ . '/user.php';
 	}
 
 	/**
@@ -177,90 +179,6 @@ class Setup {
 		}
 
 		return $usernames;
-	}
-
-	/**
-	 * Retrieves a user's WSU net ID from the user metadata or their email.
-	 *
-	 * Returns a saved WSU NID in the user's usermeta if it exists. If no NID
-	 * usermeta is found, it falls back to the user email address and formats
-	 * it into a WSU net ID.
-	 *
-	 * @since 0.9.0
-	 *
-	 * @param WP_User $user Required. A WP_User object for the user to get a NID for.
-	 * @return string A sanitized WSU network ID.
-	 */
-	private function get_user_wsu_nid( $user ) {
-		// Check for a saved WSU NID in the users usermeta.
-		$wsu_nid = get_user_meta( $user->ID, '_wsu_nid', true );
-
-		if ( ! $wsu_nid ) {
-			// If no WSU NID is found try building one out of the user email.
-			$wsu_nid = implode( explode( '@', $user->user_email, -1 ) );
-		}
-
-		return sanitize_user( $wsu_nid );
-	}
-
-	/**
-	 * Updates one or more user's metadata with their WSU A11y Training status.
-	 *
-	 * A callback method for the `wp_login` action hook, which provides the user
-	 * login and WP_User object for a successfully authenticated user on login.
-	 * It is triggered when a users logs in by the `wp_signon()` function.
-	 * This calls the internal method to fetch data from the API and update the
-	 * user(s) metadata accordingly.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param string  $user_login The authenticated user's login.
-	 * @param WP_User $user       The WP User object for the authenticated user.
-	 * @return array Associative array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
-	 */
-	public function update_a11y_status_usermeta( $user_login, $user ) {
-
-		$users = $this->get_usernames_list( $user );
-		$url   = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
-
-		foreach ( $users as $user_id => $username ) {
-			// Only fetch new data for certified users when nearing expiration.
-			if ( $this->is_user_certified( $user_id ) && ! $this->is_user_a11y_lt_one_month( $user_id ) ) {
-				continue;
-			}
-
-			// Fetch the accessibility training status data.
-			//$user_status = $this->fetch_a11y_status_response( $this->url, $username );
-			$user_status = new WSU_API\WSU_API( $url, $username );
-
-			// Save the accessibility training status to user metadata.
-			$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
-
-		}
-
-		return $this->wsu_api_response;
-	}
-
-	/**
-	 * Updates an individual user's metadata with their WSU A11y Training status.
-	 *
-	 * @since 0.6.0
-	 *
-	 * @param int $user_id The WP user ID of the user to update.
-	 * @return array Array of user_id => `update_user_meta` responses (int|bool, meta ID if the key didn't exist, true on updated, false on failure or no change); or false if the request failed.
-	 */
-	public function update_a11y_status_by_user_id( $user_id ) {
-		$username = $this->get_user_wsu_nid( get_user_by( 'id', $user_id ) );
-		$url      = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
-
-		// Fetch the accessibility training status data.
-		//$user_status = $this->fetch_a11y_status_response( $this->url, $username );
-		$user_status = new WSU_API\WSU_API( $url, $username );
-
-		// Save the accessibility training status to user metadata.
-		$this->wsu_api_response[ $user_id ] = update_user_meta( $user_id, self::$slug, $user_status );
-
-		return $this->wsu_api_response;
 	}
 
 	/**
@@ -751,7 +669,7 @@ class Setup {
 	 * Routes actions based on the "action" query variable.
 	 *
 	 * Called on the `admin_init` hook, this will call the Setup
-	 * class update_a11y_status_by_user_id() method for the requested user ID
+	 * class user\update_a11y_user_meta() method for the requested user ID
 	 * to update that user's WSU accessibility training user metadata.
 	 *
 	 * @since 0.6.0
@@ -781,7 +699,7 @@ class Setup {
 			}
 
 			// Checks completed, go ahead and update the user's a11y status data.
-			$updated = $this->update_a11y_status_by_user_id( $user_id );
+			$updated = user\update_a11y_user_meta( $user_id );
 
 			return $updated;
 		}
@@ -817,7 +735,7 @@ class Setup {
 		$successful = 0;
 		foreach ( $user_ids as $user_id ) {
 			// Checks completed, go ahead and update the user's a11y status data.
-			$updated = $this->update_a11y_status_by_user_id( absint( $user_id ) );
+			$updated = user\update_a11y_user_meta( absint( $user_id ) );
 
 			if ( false !== $updated ) {
 				$successful++;
