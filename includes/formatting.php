@@ -36,7 +36,7 @@ function sanitize_wsu_api_response( $raw_result ) {
 	 * @param array $result The sanitized API response.
 	 * @param array $raw_result The API response prior to sanitizing.
 	 */
-	$result = apply_filters( __NAMESPACE__ . '\sanitize_wsu_api_response', $result, $raw_result );
+	$result = apply_filters( 'sanitize_wsu_api_response', $result, $raw_result );
 
 	return $result;
 }
