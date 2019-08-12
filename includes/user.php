@@ -86,7 +86,6 @@ function update_a11y_user_meta( $user ) {
 	if ( is_int( $user ) ) {
 		$user = get_user_by( 'id', $user );
 	}
-
 	$username = get_user_wsu_nid( $user );
 
 	// TODO: Move this to a plugin setting/option.
@@ -97,11 +96,21 @@ function update_a11y_user_meta( $user ) {
 
 	// Fetch the most recent accessibility training status data.
 	$new_user_status = new WSU_API\WSU_API( $url, $username );
+	$new_user_status = $new_user_status->result;
 
 	if ( ! empty( $user_status ) ) {
-		$user_status = wp_parse_args( $new_user_status->result, $user_status );
+		// Don't update expiration date if user certification has expired.
+		if (
+			( isset( $user_status['was_certified'] ) && true === $user_status['was_certified'] )
+			&& true !== $new_user_status['is_certified']
+		) {
+			$new_user_status['expire_date'] = $user_status['expire_date'];
+		}
+
+		// Merge the new user status into the existing user status.
+		$user_status = wp_parse_args( $new_user_status, $user_status );
 	} else {
-		$user_status = $new_user_status->result;
+		$user_status = $new_user_status;
 	}
 
 	// Save the accessibility training status to user metadata.
