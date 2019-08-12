@@ -170,6 +170,11 @@ class Setup {
 	 */
 	public function enqueue_scripts() {
 		$plugin_meta = get_plugin_data( $this->basename );
-		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $plugin_meta['Version'] );
+		wp_enqueue_style(
+			'wsuwp-a11y-status-dashboard',
+			plugins_url( 'css/main.css', __DIR__ ),
+			array(),
+			$plugin_meta['Version']
+		);
 	}
 }
