@@ -44,7 +44,7 @@ function add_a11y_status_user_column( $columns ) {
  */
 function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 	if ( 'a11y_status' === $column_name ) {
-		$user = get_user_by( 'id', $user_id );
+		$user         = get_user_by( 'id', $user_id );
 		$last_checked = user\get_a11y_user_meta( $user )['last_checked'];
 
 		if ( ! user\is_user_certified( $user ) ) {
