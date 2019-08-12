@@ -355,11 +355,12 @@ class Setup {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$last_checked = user\get_a11y_user_meta( $user_id )['last_checked'];
+			$user = get_user_by( 'id', $user_id );
+			$last_checked = user\get_a11y_user_meta( $user )['last_checked'];
 
-			if ( ! user\is_user_certified( $user_id ) ) {
-				if ( user\was_user_certified( $user_id ) ) {
-					$expired = user\get_user_a11y_expire_diff( $user_id );
+			if ( ! user\is_user_certified( $user ) ) {
+				if ( user\was_user_certified( $user ) ) {
+					$expired = user\get_user_a11y_expire_diff( $user );
 					$output  = sprintf(
 						'<span title="Updated %1$s" class="dashicons-before dashicons-warning notice-error">Expired %2$s ago</span>',
 						esc_attr( $last_checked ),
@@ -372,8 +373,8 @@ class Setup {
 					);
 				}
 			} else {
-				$class   = ( user\is_user_a11y_expires_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
-				$expires = user\get_user_a11y_expire_diff( $user_id );
+				$class   = ( user\is_user_a11y_expires_one_month( $user ) ) ? '-flag notice-warning' : '-awards notice-success';
+				$expires = user\get_user_a11y_expire_diff( $user );
 				$output  = sprintf(
 					'<span title="Updated %1$s" class="dashicons-before dashicons%2$s">Expires in %3$s</span>',
 					esc_attr( $last_checked ),
