@@ -17,16 +17,35 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-alpha-2 (:construction: 2019-08-09)
+## 1.0.0-beta-1 (:construction: 2019-08-12)
+
+### Fixed
+
+- Fix #18 Don't modify a11y expiration date when certification expires. Keep the old expiration date until certification is renewed.
+- :bug: Fix #17 Don't overwrite `was_certified` value on expiration. Merge existing data with new data instead of replacing it entirely.
+- :warning: PHP and CSS lint warnings from updated rules.
 
 ### Changed
 
+- :lock: Close #25 Allow only site admins to modify WSU NID usermeta value.
+- :wrench: Replace manual stylelint config file with modified WP default rules.
+- :wrench: Update npm package metadata and scripts.
+- :wrench: Close #20 Use up-to-date WP linting configuration.
+- :truck: Move plugin settings API methods to a dedicated `settings.php` file.
+- :truck: Move all user messaging functions to a dedicated `notices.php` file.
+- :truck: Move all admin page functions to a dedicated `admin.php` file.
 - :truck: Move all user-related functions, like getting/setting user meta, to a dedicated User API file.
 - Simplify setting the plugin basename value in the Setup class.
 - :recycle: Standardize user a11y meta methods to use similar syntax.
 - :truck: Move sanitizing and formatting methods to a dedicated formatting API file.
 - :truck: Move API handler from the setup class to a dedicated API class.
 - Use namespaces in all PHP files.
+
+### Added
+
+- :heavy_plus_sign: WP stylelint configuration npm dev dependency.
+- :wrench: Configuration file for the `npm-package-json-lint` dependency.
+- :heavy_plus_sign: NPM dev dependencies for linting `package.json` files.
 
 ### Removed
 
