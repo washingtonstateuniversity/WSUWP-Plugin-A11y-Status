@@ -13,6 +13,7 @@ namespace WSUWP\A11yStatus\WSU_API;
 
 use WSUWP\A11yStatus\Init;
 use WSUWP\A11yStatus\formatting;
+use WSUWP\A11yStatus\notices;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
@@ -98,7 +99,7 @@ class WSU_API {
 
 		// Check for a successful response.
 		if ( is_wp_error( $this->wsu_api_response ) ) {
-			Init\Setup::error( $this->wsu_api_response->get_error_message() );
+			notices\error( $this->wsu_api_response->get_error_message() );
 
 			return false;
 		}
@@ -107,7 +108,7 @@ class WSU_API {
 
 		// Check for a successful connection.
 		if ( 200 !== (int) $response_code ) {
-			Init\Setup::error(
+			notices\error(
 				sprintf(
 					/* translators: 1: the API requst URL, 2: an HTTP error response code */
 					__( 'WSU API request failed. The request for <%1$s> returned HTTP code: %2$s', 'wsuwp-a11y-status' ),
