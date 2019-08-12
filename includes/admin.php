@@ -150,7 +150,7 @@ function handle_a11y_status_actions() {
 
 		// Check the nonce.
 		if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], 'update_a11y_' . $user_id ) ) {
-			wp_die();
+			wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
 		}
 
 		// Checks completed, go ahead and update the user's a11y status data.
