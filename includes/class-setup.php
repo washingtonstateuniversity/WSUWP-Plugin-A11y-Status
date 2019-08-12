@@ -114,7 +114,9 @@ class Setup {
 		add_action( 'admin_init', array( $this, 'handle_a11y_status_actions' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
 		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
+
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+
 		add_action( 'edit_user_profile', array( $this, 'usermeta_form_field_nid' ) );
 		add_action( 'show_user_profile', array( $this, 'usermeta_form_field_nid' ) );
 		add_action( 'edit_user_profile_update', array( $this, 'usermeta_form_field_nid_update' ) );
@@ -123,6 +125,7 @@ class Setup {
 		add_filter( 'manage_users_custom_column', array( $this, 'manage_a11y_status_user_column' ), 10, 3 );
 		add_filter( 'user_row_actions', array( $this, 'add_a11y_status_user_row_action' ), 10, 2 );
 		add_filter( 'bulk_actions-users', array( $this, 'add_a11y_status_user_bulk_action' ), 10, 1 );
+
 		add_filter( 'handle_bulk_actions-users', array( $this, 'handle_a11y_status_bulk_actions' ), 10, 3 );
 	}
 
@@ -140,166 +143,6 @@ class Setup {
 
 		// The plugin user API.
 		require __DIR__ . '/user.php';
-	}
-
-	/**
-	 * Gets the URL to the WSU Accessibility Training course.
-	 *
-	 * Note: This returns an unescaped URL string. Users should handle escaping
-	 * before using this.
-	 *
-	 * @since 0.8.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
-	 */
-	private function get_user_a11y_training_url( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status ) ) {
-			return $user_status['trainingURL'];
-		}
-
-		return false;
-	}
-
-	/**
-	 * Gets the date a given user's a11y certification expires.
-	 *
-	 * Retrieves the date a given user's WSU Accessibility certification
-	 * expires, formatted based on the WP site option `date_format`.
-	 *
-	 * @since 0.2.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The expiration date for the given user or false if no data.
-	 */
-	public static function get_user_a11y_expiration_date( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status ) ) {
-			return date_format( $user_status['Expires'], get_option( 'date_format' ) );
-		}
-
-		return false;
-	}
-
-	/**
-	 * Gets the time remaining until a11y certification expires.
-	 *
-	 * Returns the time remaining until a given user's WSU Accessibility
-	 * certification expires, formatted into a human readable format using
-	 * the WP `human_time_diff` function {@see https://developer.wordpress.org/reference/functions/human_time_diff/}
-	 * The time is returned in a human readable format such as "1 hour",
-	 * "5 mins", or "2 days".
-	 *
-	 * @since 0.2.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false The time remaining until a11y certification expires for the given user or false if no data.
-	 */
-	public static function get_user_a11y_time_to_expiration( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status ) ) {
-			return human_time_diff( date_format( $user_status['Expires'], 'U' ) );
-		}
-
-		return false;
-	}
-
-	/**
-	 * Determines time remaining in a user's 30-day A11y Training grace period.
-	 *
-	 * Returns the number of days remaining in a user's 30-day grace period,
-	 * calculated by checking the difference between the current date and the
-	 * user's WP registration date. Returns the string "0 days" if the grace
-	 * period has expired by any number of days.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return string|false A string containing the number of days remaining in human-readable format or "0 days" if the period has expired. False if no data found or user is certified.
-	 */
-	public static function get_user_a11y_grace_period_remaining( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( empty( $user_status ) || ! $user_status['isCertified'] ) {
-			$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
-
-			$registration = date_create( $wp_user->user_registered );
-
-			$end   = $registration->add( new \DateInterval( 'P30D' ) );
-			$today = date_create();
-
-			if ( $today > $end ) {
-				$days_remaining = '0 days';
-			} else {
-				$days_remaining = date_diff( $end, $today )->format( '%a days' );
-			}
-
-			return $days_remaining;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Determines whether a given user is A11y Training certified.
-	 *
-	 * @since 0.2.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return bool True if the user is certified, false if not or if the data is not found.
-	 */
-	public static function is_user_certified( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Determines whether a user has been A11y Training certified in the past.
-	 *
-	 * @since 0.5.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return bool True if the user has ever been certified and false if not.
-	 */
-	public static function was_user_certified( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status['was_certified'] ) ) {
-			return true;
-		}
-
-		return false;
-	}
-
-	/**
-	 * Determines if a user's a11y certification expires in less than a month.
-	 *
-	 * @since 0.2.0
-	 *
-	 * @param string $user_ID Optional. The WP user ID of a user to check. Defaults to the current user.
-	 * @return bool True if the user's certification expires in less than one month and false if not, or if the data is not found.
-	 */
-	public static function is_user_a11y_lt_one_month( $user_id = '' ) {
-		$user_status = self::get_a11y_user_meta( $user_id );
-
-		if ( ! empty( $user_status ) && false !== $user_status['isCertified'] ) {
-			$diff = $user_status['Expires']->diff( date_create() );
-
-			if ( 1 > $diff->m ) {
-				return true;
-			}
-		}
-
-		return false;
 	}
 
 	/**
@@ -358,17 +201,17 @@ class Setup {
 	 */
 	public function user_a11y_status_notice__remind() {
 		// Build the messages for uncertified, expired certification, and soon-to-expire certification.
-		if ( ! self::is_user_certified() ) {
+		if ( ! user\is_user_certified() ) {
 			$class = 'notice-error';
 
-			if ( self::was_user_certified() ) {
+			if ( user\was_user_certified() ) {
 				// User certification expired.
 				$message    = __( 'Please renew your WSU Accessibility Training certification.', 'wsuwp-a11y-status' );
 				$expiration = sprintf(
 					/* translators: 1: the human readble time remaining; 2: the expiration date */
 					__( 'Your certification expired %1$s ago, on %2$s.', 'wsuwp-a11y-status' ),
-					self::get_user_a11y_time_to_expiration(),
-					self::get_user_a11y_expiration_date()
+					user\get_user_a11y_expire_diff(),
+					user\get_user_a11y_expiration_date()
 				);
 			} else {
 				// User not certified now or ever.
@@ -376,19 +219,19 @@ class Setup {
 				$expiration = sprintf(
 					/* translators: 1: the human readble time remaining; 2: the expiration date */
 					__( 'You have %1$s remaining to complete the WSU Accessibility Training certification.', 'wsuwp-a11y-status' ),
-					self::get_user_a11y_grace_period_remaining()
+					user\get_user_a11y_grace_period_remaining()
 				);
 			}
 		} else {
 			// User certification expires soon.
-			if ( self::is_user_a11y_lt_one_month() ) {
+			if ( user\is_user_a11y_expires_one_month() ) {
 				$class      = 'notice-warning';
 				$message    = __( 'WSU Accessibility Training certification expiring soon.', 'wsuwp-a11y-status' );
 				$expiration = sprintf(
 					/* translators: 1: the human readble time remaining; 2: the expiration date */
 					__( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ),
-					self::get_user_a11y_time_to_expiration(),
-					self::get_user_a11y_expiration_date()
+					user\get_user_a11y_expire_diff(),
+					user\get_user_a11y_expiration_date()
 				);
 			} else {
 				// Nothing if the certification lasts for more than one month.
@@ -413,7 +256,7 @@ class Setup {
 				<p>
 					<strong><?php echo esc_html( $message ); ?></strong>
 					<?php echo esc_html( $expiration ); ?>
-					<strong><a href="<?php echo esc_url( self::get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training<span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
+					<strong><a href="<?php echo esc_url( user\get_user_a11y_training_url() ); ?>" target="_blank" rel="noopener noreferrer">Take the training<span class="screen-reader-text">(opens in a new tab)</span><span aria-hidden="true" class="dashicons dashicons-external"></span></a></strong>
 					<a class="button" href="<?php echo esc_url( $update_uri ); ?>"><?php esc_html_e( 'Refresh', 'wsuwp-a11y-status' ); ?> <span class="screen-reader-text">(<?php esc_html_e( 'Refresh accessibility status', 'wsuwp-a11y-status' ); ?>)</span></a>
 				</p>
 			</div>
@@ -512,11 +355,11 @@ class Setup {
 	 */
 	public function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 		if ( 'a11y_status' === $column_name ) {
-			$last_checked = self::get_a11y_user_meta( $user_id )['last_checked'];
+			$last_checked = user\get_a11y_user_meta( $user_id )['last_checked'];
 
-			if ( ! self::is_user_certified( $user_id ) ) {
-				if ( self::was_user_certified( $user_id ) ) {
-					$expired = self::get_user_a11y_time_to_expiration( $user_id );
+			if ( ! user\is_user_certified( $user_id ) ) {
+				if ( user\was_user_certified( $user_id ) ) {
+					$expired = user\get_user_a11y_expire_diff( $user_id );
 					$output  = sprintf(
 						'<span title="Updated %1$s" class="dashicons-before dashicons-warning notice-error">Expired %2$s ago</span>',
 						esc_attr( $last_checked ),
@@ -529,8 +372,8 @@ class Setup {
 					);
 				}
 			} else {
-				$class   = ( self::is_user_a11y_lt_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
-				$expires = self::get_user_a11y_time_to_expiration( $user_id );
+				$class   = ( user\is_user_a11y_expires_one_month( $user_id ) ) ? '-flag notice-warning' : '-awards notice-success';
+				$expires = user\get_user_a11y_expire_diff( $user_id );
 				$output  = sprintf(
 					'<span title="Updated %1$s" class="dashicons-before dashicons%2$s">Expires in %3$s</span>',
 					esc_attr( $last_checked ),

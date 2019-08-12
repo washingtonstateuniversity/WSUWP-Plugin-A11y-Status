@@ -112,3 +112,163 @@ function delete_a11y_user_meta( $user ) {
 
 	return $deleted;
 }
+
+/**
+ * Determines whether a given user is Accessibility Training certified.
+ *
+ * @since 0.2.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return bool True if the user is certified, false if not or if the data is not found.
+ */
+function is_user_certified( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( ! empty( $user_status ) && false !== $user_status['is_certified'] ) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Determines whether a user has been A11y Training certified in the past.
+ *
+ * @since 0.5.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return bool True if the user has ever been certified and false if not.
+ */
+function was_user_certified( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( ! empty( $user_status['was_certified'] ) && false !== $user_status['was_certified'] ) {
+		return true;
+	}
+
+	return false;
+}
+
+/**
+ * Determines if a user's a11y certification expires in less than a month.
+ *
+ * @since 0.2.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return bool True if the user's certification expires in less than one month and false if not, or if the data is not found.
+ */
+function is_user_a11y_expires_one_month( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( ! empty( $user_status ) && false !== $user_status['is_certified'] ) {
+		$diff = $user_status['expire_date']->diff( date_create() );
+
+		if ( 1 > $diff->m ) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+/**
+ * Gets the date a given user's a11y certification expires.
+ *
+ * Retrieves the date a given user's WSU Accessibility certification expires,
+ * formatted based on the WP site option `date_format`.
+ *
+ * @since 0.2.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return string|false The expiration date for the given user or false if no data.
+ */
+function get_user_a11y_expiration_date( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( ! empty( $user_status ) ) {
+		return date_format( $user_status['expire_date'], get_option( 'date_format' ) );
+	}
+
+	return false;
+}
+
+/**
+ * Gets the time difference between user's certification expiration and now.
+ *
+ * Returns the time between when a given user's WSU Accessibility certification
+ * expires and the current time, formatted into a human readable format using
+ * the WP `human_time_diff` function {@see https://developer.wordpress.org/reference/functions/human_time_diff/}
+ * The time is returned in a human readable format such as "1 hour", "5 mins",
+ * or "2 days".
+ *
+ * @since 0.2.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return string|false The time remaining until a11y certification expires for the given user or false if no data.
+ */
+function get_user_a11y_expire_diff( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( ! empty( $user_status ) ) {
+		return human_time_diff( date_format( $user_status['expire_date'], 'U' ) );
+	}
+
+	return false;
+}
+
+/**
+ * Determines time remaining in a user's 30-day A11y Training grace period.
+ *
+ * Returns the number of days remaining in a user's 30-day grace period,
+ * calculated by checking the difference between the current date and the
+ * user's WP registration date. Returns the string "0 days" if the grace
+ * period has expired by any number of days.
+ *
+ * @since 0.5.0
+ *
+ * @param  WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return string|false A string containing the number of days remaining in human-readable format or "0 days" if the period has expired. False if no data found or user is certified.
+ */
+function get_user_a11y_grace_period_remaining( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user );
+
+	if ( empty( $user_status ) || ! $user_status['is_certified'] ) {
+		$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
+
+		$registration = date_create( $wp_user->user_registered );
+
+		$end   = $registration->add( new \DateInterval( 'P30D' ) );
+		$today = date_create();
+
+		if ( $today > $end ) {
+			$days_remaining = '0 days';
+		} else {
+			$days_remaining = date_diff( $end, $today )->format( '%a days' );
+		}
+
+		return $days_remaining;
+	}
+
+	return false;
+}
+
+/**
+ * Gets the URL to the WSU Accessibility Training course.
+ *
+ * Note: This returns an unescaped URL string. Users should handle escaping
+ * before using this.
+ *
+ * @since 0.8.0
+ *
+ * @param WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
+ * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
+ */
+function get_user_a11y_training_url( $user = '' ) {
+	$user_status = get_a11y_user_meta( $user_id );
+
+	if ( ! empty( $user_status ) ) {
+		return $user_status['training_url'];
+	}
+
+	return false;
+}
