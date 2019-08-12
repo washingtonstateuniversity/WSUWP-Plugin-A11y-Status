@@ -111,20 +111,6 @@ class Setup {
 	public function setup_hooks() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
 
-		// User hooks.
-		add_action( 'wp_login', 'WSUWP\A11yStatus\user\handle_user_login', 10, 2 );
-		add_action( 'user_register', 'WSUWP\A11yStatus\user\update_a11y_user_meta', 10, 1 );
-
-		// Notices hooks.
-		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
-		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
-
-		// Options hooks.
-		add_action( 'edit_user_profile', array( $this, 'usermeta_form_field_nid' ) );
-		add_action( 'show_user_profile', array( $this, 'usermeta_form_field_nid' ) );
-		add_action( 'edit_user_profile_update', array( $this, 'usermeta_form_field_nid_update' ) );
-		add_action( 'personal_options_update', array( $this, 'usermeta_form_field_nid_update' ) );
-
 		// Admin hooks.
 		add_filter( 'manage_users_columns', 'WSUWP\A11yStatus\admin\add_a11y_status_user_column' );
 		add_filter( 'manage_users_custom_column', 'WSUWP\A11yStatus\admin\manage_a11y_status_user_column', 10, 3 );
@@ -132,6 +118,20 @@ class Setup {
 		add_filter( 'bulk_actions-users', 'WSUWP\A11yStatus\admin\add_a11y_status_user_bulk_action', 10, 1 );
 		add_action( 'admin_init', 'WSUWP\A11yStatus\admin\handle_a11y_status_actions' );
 		add_filter( 'handle_bulk_actions-users', 'WSUWP\A11yStatus\admin\handle_a11y_status_bulk_actions', 10, 3 );
+
+		// Notices hooks.
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__remind' ) );
+		add_action( 'admin_notices', array( $this, 'user_a11y_status_notice__action' ) );
+
+		// Settings hooks.
+		add_action( 'edit_user_profile', array( $this, 'usermeta_form_field_nid' ) );
+		add_action( 'show_user_profile', array( $this, 'usermeta_form_field_nid' ) );
+		add_action( 'edit_user_profile_update', array( $this, 'usermeta_form_field_nid_update' ) );
+		add_action( 'personal_options_update', array( $this, 'usermeta_form_field_nid_update' ) );
+
+		// User hooks.
+		add_action( 'wp_login', 'WSUWP\A11yStatus\user\handle_user_login', 10, 2 );
+		add_action( 'user_register', 'WSUWP\A11yStatus\user\update_a11y_user_meta', 10, 1 );
 	}
 
 	/**
