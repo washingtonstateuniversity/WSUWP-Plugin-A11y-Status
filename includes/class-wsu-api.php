@@ -59,8 +59,12 @@ class WSU_API {
 	protected $api_nid;
 
 	/**
-	 * Connects to the API and does stuff
+	 * Connects to the API and fetches a response for the given WSU NID.
 	 *
+	 * @since 1.0.0
+	 *
+	 * @param string $api_url Required. The WSU accesibility API URL.
+	 * @param string $api_nid Required. A WSU network ID to fetch data for.
 	 */
 	public function __construct( $api_url, $api_nid ) {
 		$this->api_url = $api_url;
@@ -73,22 +77,10 @@ class WSU_API {
 	 * Gets the WSU Accessibility Training status info from the WSU API.
 	 *
 	 * Connect to the API to retrieve info for given username(s) in JSON
-	 * format and parse it, then add several additional items to the resulting
-	 * array and return it. The returned array should include the following
-	 * key-value pairs:
-	 *
-	 * (
-	 *   'isCertified'    => (bool)     whether the user is a11y certified
-	 *   'Expires'        => (DateTime) the expiration date
-	 *   'trainingURL'    => (string)   the training URL
-	 *   'last_checked'   => (string)   the date last checked in mysql format
-	 *   'was_certified' => (bool)     whether the user was ever certified
-	 * )
+	 * format and return the sanitized parsed results.
 	 *
 	 * @since 1.0.0
 	 *
-	 * @param string $url      The WSU Accessibility Training Status API url.
-	 * @param string $username The WSU NID of the user to retrieve data for.
 	 * @return array|false Array of accessibility training status data for the given username.
 	 */
 	public function fetch_api_response() {
