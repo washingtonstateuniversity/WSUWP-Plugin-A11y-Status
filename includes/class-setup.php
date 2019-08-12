@@ -11,6 +11,7 @@ namespace WSUWP\A11yStatus\Init;
 use WSUWP\A11yStatus\admin;
 use WSUWP\A11yStatus\WSU_API;
 use WSUWP\A11yStatus\notices;
+use WSUWP\A11yStatus\settings;
 use WSUWP\A11yStatus\user;
 
 if ( ! defined( 'ABSPATH' ) ) {
@@ -125,10 +126,10 @@ class Setup {
 		add_action( 'admin_notices', 'WSUWP\A11yStatus\notices\user_a11y_status_notice__action' );
 
 		// Settings hooks.
-		add_action( 'edit_user_profile', array( $this, 'usermeta_form_field_nid' ) );
-		add_action( 'show_user_profile', array( $this, 'usermeta_form_field_nid' ) );
-		add_action( 'edit_user_profile_update', array( $this, 'usermeta_form_field_nid_update' ) );
-		add_action( 'personal_options_update', array( $this, 'usermeta_form_field_nid_update' ) );
+		add_action( 'edit_user_profile', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid' );
+		add_action( 'show_user_profile', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid' );
+		add_action( 'edit_user_profile_update', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid_update' );
+		add_action( 'personal_options_update', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid_update' );
 
 		// User hooks.
 		add_action( 'wp_login', 'WSUWP\A11yStatus\user\handle_user_login', 10, 2 );
@@ -153,6 +154,9 @@ class Setup {
 		// Notices and user messaging functions.
 		require __DIR__ . '/notices.php';
 
+		// The plugin settings API.
+		require __DIR__ . '/settings.php';
+
 		// The plugin user API.
 		require __DIR__ . '/user.php';
 	}
@@ -166,65 +170,4 @@ class Setup {
 		$plugin_meta = get_plugin_data( $this->basename );
 		wp_enqueue_style( 'wsuwp-a11y-status-dashboard', plugins_url( 'css/main.css', __DIR__ ), array(), $plugin_meta['Version'] );
 	}
-
-	/**
-	 * Displays a field on the user profile screen to add a WSU NID.
-	 *
-	 * Callback method for the `edit_user_profile` and `show_user_profile`
-	 * hooks that allow adding fields and data to the user profile page for,
-	 * respectively, users viewing other user profiles and users viewing their
-	 * own profile.
-	 *
-	 * @since 0.9.0
-	 *
-	 * @param WP_User $user The WP_User object of the user being edited.
-	 * @return void
-	 */
-	public function usermeta_form_field_nid( $user ) {
-		?>
-		<h2>WSU Network ID</h2>
-		<table class="form-table">
-			<tbody>
-				<tr class="user-wsu-nid-wrap">
-					<th>
-						<label for="wsu_nid"><?php esc_html_e( 'WSU NID', 'wsuwp-a11y-status' ); ?></label>
-					</th>
-					<td>
-						<input type="text" name="wsu_nid" id="wsu_nid" aria-describedby="nid-description" value="<?php echo esc_attr( get_user_meta( $user->ID, '_wsu_nid', true ) ); ?>" class="regular-text">
-						<p class="description" id="nid-description">Enter a WSU Network ID if not using a WSU email address.</p>
-					</td>
-				</tr>
-			</tbody>
-		</table>
-		<?php
-	}
-
-	/**
-	 * Handles data submitted from the WSU NID field on the user profile screen.
-	 *
-	 * Callback method for the `edit_user_profile_update` hook, which triggers
-	 * when a user submits data to update another user's profile, and the
-	 * `personal_options_update`, which triggers when a user submits data to
-	 * update their own profile.
-	 *
-	 * @since 0.9.0
-	 *
-	 * @param int $user_id Optional. The user ID of the user being edited.
-	 * @return int|bool Meta ID if a new key was created, or true if value was updated and false on failure or no change
-	 */
-	public function usermeta_form_field_nid_update( $user_id ) {
-		check_admin_referer( 'update-user_' . $user_id );
-
-		// Check permissions.
-		if ( ! current_user_can( 'edit_user', $user_id ) ) {
-			return false;
-		}
-
-		// Sanitize input data.
-		$wsu_nid = sanitize_text_field( wp_strip_all_tags( $_POST['wsu_nid'] ) );
-
-		// Create/update user metadata for the given user ID.
-		return update_user_meta( $user_id, '_wsu_nid', $wsu_nid );
-	}
-
 }
