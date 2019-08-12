@@ -43,8 +43,6 @@ register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninst
  */
 function load() {
 	$wsuwp_a11y_status = Init\Setup::get_instance( __FILE__ );
-	$wsuwp_a11y_status->setup_hooks();
-	$wsuwp_a11y_status->includes();
 
 	return $wsuwp_a11y_status;
 }

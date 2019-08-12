@@ -53,6 +53,8 @@ class Setup {
 		if ( ! isset( $instance ) ) {
 			$instance = new Setup();
 
+			$instance->setup_hooks();
+			$instance->includes();
 			$instance->basename = $file;
 		}
 
