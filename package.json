@@ -1,30 +1,33 @@
 {
-	"name": "wsuwp-plugin-a11y-status",
-	"version": "0.10.0",
+	"name": "@wsuwp/wsuwp-plugin-a11y-status",
+	"version": "1.0.0",
+	"description": "A plugin to monitor the WSU Accessibility Training certification status of registered WP users.",
+	"author": "Adam Turner",
+	"contributors": [
+		{
+			"name": "washingtonstateuniversity"
+		}
+	],
+	"license": "GPL-2.0-or-later",
+	"keywords": [
+		"WordPress",
+		"plugin",
+		"accessibility",
+		"users"
+	],
+	"homepage": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status/blob/master/README.md",
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status"
 	},
-	"author": "washingtonstateuniversity",
-	"contributors": [
-		{
-			"name": "Adam Turner"
-		}
-	],
-	"license": "GPL-2.0+",
+	"bugs": {
+		"url": "https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status/issues"
+	},
 	"browserslist": [
 		"> 1%",
 		"ie 8-11",
 		"Firefox ESR"
 	],
-	"scripts": {
-		"lint:php": "vendor/bin/phpcs -v --colors --extensions=php --ignore=\"*/vendor/*,*/node_modules/*\" --standard=phpcs.ruleset.xml *.php includes/",
-		"lint:css": "stylelint \"src/_css/**/*.css\"",
-		"clean": "rimraf {css/}",
-		"style": "postcss src/_css/main.css --output css/main.css",
-		"test": "run-p lint:*",
-		"build": "run-s clean test style"
-	},
 	"devDependencies": {
 		"cssnano": "^4.1.x",
 		"npm-run-all": "^4.1.x",
@@ -32,5 +35,15 @@
 		"postcss-preset-env": "^6.7.0",
 		"rimraf": "^2.6.x",
 		"stylelint": "^10.1.0"
+	},
+	"scripts": {
+		"build": "run-s clean test 'build:*'",
+		"build:styles": "postcss 'src/_css/*.css' --dir css/",
+		"clean": "rimraf css/",
+		"lint:styles": "stylelint 'src/**/*.css'",
+		"lint:pkg": "npmPkgJsonLint .",
+		"lint:php": "composer lint-detail",
+		"start": "run-p 'build:*'",
+		"test": "run-p 'lint:*'"
 	}
 }
