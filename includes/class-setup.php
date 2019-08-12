@@ -8,10 +8,10 @@
 
 namespace WSUWP\A11yStatus\Init;
 
-use WSUWP\A11yStatus\WSU_API;
-use WSUWP\A11yStatus\user;
 use WSUWP\A11yStatus\admin;
+use WSUWP\A11yStatus\WSU_API;
 use WSUWP\A11yStatus\notices;
+use WSUWP\A11yStatus\user;
 
 if ( ! defined( 'ABSPATH' ) ) {
 	exit; // Exit if accessed directly.
