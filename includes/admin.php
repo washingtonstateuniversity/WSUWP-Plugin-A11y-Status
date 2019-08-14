@@ -8,6 +8,8 @@
 
 namespace WSUWP\A11yStatus\admin;
 
+use WSUWP\A11yStatus\templates\settings;
+use WSUWP\A11yStatus\Init;
 use WSUWP\A11yStatus\user;
 
 /**
@@ -207,4 +209,33 @@ function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) 
 	);
 
 	return $redirect_url;
+}
+
+/**
+ * Registers a WP admin page and menu item for the settings page.
+ *
+ * @since 1.0.0
+ */
+function add_admin_page() {
+	add_options_page(
+		__( 'WSU A11y Status Settings', 'wsuwp-a11y-status' ),
+		__( 'WSU A11y Status', 'wsuwp-a11y-status' ),
+		'manage_options',
+		Init\Setup::$slug,
+		__NAMESPACE__ . '\settings_page_content'
+	);
+}
+
+/**
+ * Displays the A11y Status plugin settings page for managing options.
+ *
+ * @since 1.0.0
+ */
+function settings_page_content() {
+	// Check permissions.
+	if ( ! current_user_can( 'manage_options' ) ) {
+		return;
+	}
+
+	include plugin_dir_path( __DIR__ ) . 'views/page-settings.php';
 }
