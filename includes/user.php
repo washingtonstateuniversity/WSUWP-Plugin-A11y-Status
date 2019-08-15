@@ -244,7 +244,7 @@ function get_user_a11y_expire_diff( $user = '' ) {
  * @return string|false An unecaped URL to the WSU Accessibility Training course or false if the data is not found.
  */
 function get_user_a11y_training_url( $user = '' ) {
-	$user_status = get_a11y_user_meta( $user_id );
+	$user_status = get_a11y_user_meta( $user );
 
 	if ( ! empty( $user_status ) ) {
 		return $user_status['training_url'];
