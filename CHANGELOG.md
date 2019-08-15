@@ -17,16 +17,18 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-beta-1 (:construction: 2019-08-12)
+## 1.0.0-beta-2 (:construction: 2019-08-15)
 
 ### Fixed
 
+- :bug: Using a nonexistent variable in `get_user_a11y_training_url`.
 - Fix #18 Don't modify a11y expiration date when certification expires. Keep the old expiration date until certification is renewed.
 - :bug: Fix #17 Don't overwrite `was_certified` value on expiration. Merge existing data with new data instead of replacing it entirely.
 - :warning: PHP and CSS lint warnings from updated rules.
 
 ### Changed
 
+- Retrieve the WSU API URL from a plugin setting.
 - :lock: Close #25 Allow only site admins to modify WSU NID usermeta value.
 - :wrench: Replace manual stylelint config file with modified WP default rules.
 - :wrench: Update npm package metadata and scripts.
@@ -43,12 +45,16 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
+- :sparkles: Close #23 Register a settings page and nav menu item for the plugin as a subpage in the main Settings nav menu.
+- Create the plugin settings page output in a new `views` directory.
+- Set default plugin settings on plugin activation when they don't already exist.
 - :heavy_plus_sign: WP stylelint configuration npm dev dependency.
 - :wrench: Configuration file for the `npm-package-json-lint` dependency.
 - :heavy_plus_sign: NPM dev dependencies for linting `package.json` files.
 
 ### Removed
 
+- :fire: Not using a grace period, so remove all of those functions and logic.
 - :fire: Not fetching data for all users so remove the `get_usernames_list` method.
 - Fix #22 Don't automatically fetch accessibility status data for all users on plugin activation or login.
 
