@@ -75,11 +75,7 @@ function user_a11y_status_notice__remind() {
 		} else {
 			// User not certified now or ever.
 			$message    = __( 'Please take the WSU Accessibility Training.', 'wsuwp-a11y-status' );
-			$expiration = sprintf(
-				/* translators: 1: the human readble time remaining; 2: the expiration date */
-				__( 'You have %1$s remaining to complete the WSU Accessibility Training certification.', 'wsuwp-a11y-status' ),
-				user\get_user_a11y_grace_period_remaining()
-			);
+			$expiration = __( 'You must pass the WSU Accessibility Training certification to publish content on this website.', 'wsuwp-a11y-status' );
 		}
 	} else {
 		// User certification expires soon.

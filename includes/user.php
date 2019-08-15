@@ -233,42 +233,6 @@ function get_user_a11y_expire_diff( $user = '' ) {
 }
 
 /**
- * Determines time remaining in a user's 30-day A11y Training grace period.
- *
- * Returns the number of days remaining in a user's 30-day grace period,
- * calculated by checking the difference between the current date and the
- * user's WP registration date. Returns the string "0 days" if the grace
- * period has expired by any number of days.
- *
- * @since 0.5.0
- *
- * @param  WP_User $user Optional. The WP_User instance of a user to check. Defaults to the current user.
- * @return string|false A string containing the number of days remaining in human-readable format or "0 days" if the period has expired. False if no data found or user is certified.
- */
-function get_user_a11y_grace_period_remaining( $user = '' ) {
-	$user_status = get_a11y_user_meta( $user );
-
-	if ( empty( $user_status ) || ! $user_status['is_certified'] ) {
-		$wp_user = ( '' !== $user_id ) ? get_user_by( 'id', $user_id ) : wp_get_current_user();
-
-		$registration = date_create( $wp_user->user_registered );
-
-		$end   = $registration->add( new \DateInterval( 'P30D' ) );
-		$today = date_create();
-
-		if ( $today > $end ) {
-			$days_remaining = '0 days';
-		} else {
-			$days_remaining = date_diff( $end, $today )->format( '%a days' );
-		}
-
-		return $days_remaining;
-	}
-
-	return false;
-}
-
-/**
  * Gets the URL to the WSU Accessibility Training course.
  *
  * Note: This returns an unescaped URL string. Users should handle escaping
