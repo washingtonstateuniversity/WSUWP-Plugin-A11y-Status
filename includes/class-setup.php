@@ -73,10 +73,31 @@ class Setup {
 	/**
 	 * Activates the WSUWP A11y Status plugin.
 	 *
+	 * Sets the default plugin settings if they don't already exist.
+	 *
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		// Nothing for now.
+		$default_settings = array(
+			'api_url' => 'https://webserv.wsu.edu/accessibility/training/service',
+		);
+		$current_settings = get_option( self::$slug . '_options' );
+
+		$settings = array();
+		if ( ! $current_settings ) {
+			// Use the defaults if there are no existing settings.
+			$settings = $default_settings;
+		} else {
+			// If settings already exist, don't overwrite them.
+			foreach ( $default_settings as $key => $value ) {
+				if ( ! isset( $current_settings[ $key ] ) ) {
+					$settings[ $key ] = $value;
+				} else {
+					$settings[ $key ] = $current_settings[ $key ];
+				}
+			}
+		}
+		add_option( self::$slug . '_options', $settings );
 	}
 
 	/**
@@ -105,6 +126,8 @@ class Setup {
 			user\delete_a11y_user_meta( $user );
 			delete_user_meta( absint( $user->ID ), '_wsu_nid' );
 		}
+
+		// TODO Unregister settings using `unregister_setting()`
 	}
 
 	/**
@@ -122,12 +145,14 @@ class Setup {
 		add_action( 'admin_init', 'WSUWP\A11yStatus\admin\handle_a11y_status_actions' );
 		add_filter( 'bulk_actions-users', 'WSUWP\A11yStatus\admin\add_a11y_status_user_bulk_action', 10, 1 );
 		add_filter( 'handle_bulk_actions-users', 'WSUWP\A11yStatus\admin\handle_a11y_status_bulk_actions', 10, 3 );
+		add_action( 'admin_menu', 'WSUWP\A11yStatus\admin\add_admin_page' );
 
 		// Notices hooks.
 		add_action( 'admin_notices', 'WSUWP\A11yStatus\notices\user_a11y_status_notice__remind' );
 		add_action( 'admin_notices', 'WSUWP\A11yStatus\notices\user_a11y_status_notice__action' );
 
 		// Settings hooks.
+		add_action( 'admin_init', 'WSUWP\A11yStatus\settings\register_settings' );
 		add_action( 'edit_user_profile', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid' );
 		add_action( 'show_user_profile', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid' );
 		add_action( 'edit_user_profile_update', 'WSUWP\A11yStatus\settings\usermeta_form_field_nid_update' );

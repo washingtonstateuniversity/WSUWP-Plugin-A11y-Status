@@ -87,15 +87,13 @@ function update_a11y_user_meta( $user ) {
 		$user = get_user_by( 'id', $user );
 	}
 	$username = get_user_wsu_nid( $user );
-
-	// TODO: Move this to a plugin setting/option.
-	$url = esc_url_raw( 'https://webserv.wsu.edu/accessibility/training/service' );
+	$options  = get_option( Init\Setup::$slug . '_options' );
 
 	// Retrieve existing accessibility status for the user.
 	$user_status = get_a11y_user_meta( $user );
 
 	// Fetch the most recent accessibility training status data.
-	$new_user_status = new WSU_API\WSU_API( $url, $username );
+	$new_user_status = new WSU_API\WSU_API( esc_url_raw( $options['api_url'] ), $username );
 	$new_user_status = $new_user_status->result;
 
 	if ( ! empty( $user_status ) ) {

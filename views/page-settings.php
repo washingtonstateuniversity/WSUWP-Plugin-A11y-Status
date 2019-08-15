@@ -14,7 +14,7 @@ use WSUWP\A11yStatus\Init;
 	<form action="options.php" method="post">
 		<?php
 		// Print security fields for registered setting `{{ plugin_slug }}_options`.
-		settings_fields( Init\Setup::$slug . '_options' );
+		settings_fields( Init\Setup::$slug );
 		// Display the registered settings sections and fields.
 		do_settings_sections( Init\Setup::$slug );
 		// Display the save settings button.

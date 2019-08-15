@@ -8,6 +8,8 @@
 
 namespace WSUWP\A11yStatus\settings;
 
+use WSUWP\A11yStatus\Init;
+
 /**
  * Displays a field on the user profile screen to add a WSU NID.
  *
@@ -69,4 +71,86 @@ function usermeta_form_field_nid_update( $user_id ) {
 
 	// Create/update user metadata for the given user ID.
 	return update_user_meta( $user_id, '_wsu_nid', $wsu_nid );
+}
+
+/**
+ * Registers plugin settings and settings form fields.
+ *
+ * @since 1.0.0
+ */
+function register_settings() {
+	register_setting(
+		Init\Setup::$slug,
+		Init\Setup::$slug . '_options'
+	);
+
+	add_settings_section(
+		Init\Setup::$slug . '_section_api',
+		__( 'WSU Accessibility API URL', 'wsuwp-a11y-status' ),
+		__NAMESPACE__ . '\settings_section_api',
+		Init\Setup::$slug
+	);
+
+	add_settings_field(
+		Init\Setup::$slug . '_options[api_url]',
+		__( 'WSU API URL', 'wsuwp-a11y-status' ),
+		__NAMESPACE__ . '\settings_field_api_url',
+		Init\Setup::$slug,
+		Init\Setup::$slug . '_section_api',
+		array(
+			'label_for' => Init\Setup::$slug . '_options[api_url]',
+			'class'     => Init\Setup::$slug . '_row',
+		)
+	);
+}
+
+/**
+ * Displays content on the plugin settings API section before the fields.
+ *
+ * @since 1.0.0
+ *
+ * @param array $args {
+ *     Array of parameters defined in the `add_settings_section` function.
+ *
+ *     @type string   $id       The slug-name used to identify the section and in the 'id' attribute of tags.
+ *     @type string   $title    Formatted title of the section. Shown as the heading for the section.
+ *     @type callable $callback Function that echoes any content at the top of the section (between heading and fields).
+ * }
+ */
+function settings_section_api( $args ) {
+	printf(
+		'<p id="%1$s">%2$s</p>',
+		esc_attr( $args['id'] ),
+		esc_html__(
+			'The URL of the WSU accessibility training certification API should
+			be entered without any query strings. The required NID parameter is
+			added automatically by the plugin during the API request.',
+			'wsuwp-a11y-status'
+		)
+	);
+}
+
+/**
+ * Displays the field inputs for the plugin settings API URL field.
+ *
+ * @since 1.0.0
+ *
+ * @param array $args
+ *     The optional extra arguments used when outputting the field, defined in
+ *     `add_settings_field`.
+ *
+ *     @type string $label_for An optional setting title to wrap in a `<label>` element.
+ *     @type string $class     A CSS class to be added to the field `<tr>` element.
+ */
+function settings_field_api_url( $args ) {
+	// Get the value of the setting registered with `register_setting`.
+	$options = get_option( Init\Setup::$slug . '_options' );
+
+	printf(
+		'<input type="text" name="%1$s" id="%1$s" aria-describedby="%2$s" value="%3$s" class="regular-text"><p class="description" id="%2$s">%4$s</p>',
+		$args['label_for'],
+		'wsu-api-url-description',
+		$options['api_url'],
+		__( 'Enter the full WSU API URL without the query string.', 'wsuwp-a11y-status' )
+	);
 }
