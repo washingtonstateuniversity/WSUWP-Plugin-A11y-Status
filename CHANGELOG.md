@@ -50,7 +50,7 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
-- Plugin update methods to watch for out-of-date database keys, prompt the user to update the database, and process the update action.
+- Close #26 Plugin update methods to watch for out-of-date database keys, prompt the user to update the database, and process the update action.
 - Uninstall methods to handle deleting usermeta, settings, and options saved to the WP database.
 - Logic to update plugin status to "deactivated" on plugin deactivation and to better handle re-activation.
 - Create a plugin status option in the `*_options` table to monitor activation/upgrade status.
