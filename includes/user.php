@@ -67,7 +67,7 @@ function get_a11y_user_meta( $user = '' ) {
 
 	$a11y_status = get_user_meta( $user->ID, Init\Setup::$slug, true );
 
-	if ( ! empty( $a11y_status ) ) {
+	if ( ! empty( $a11y_status ) && isset( $a11y_status['is_certified'] ) ) {
 		return $a11y_status;
 	}
 
@@ -176,7 +176,7 @@ function was_user_certified( $user = '' ) {
 function is_user_a11y_expires_one_month( $user = '' ) {
 	$user_status = get_a11y_user_meta( $user );
 
-	if ( ! empty( $user_status ) && false !== $user_status['is_certified'] ) {
+	if ( isset( $user_status['expire_date'] ) && false !== $user_status['is_certified'] ) {
 		$diff = $user_status['expire_date']->diff( date_create() );
 
 		if ( 1 > $diff->m ) {
