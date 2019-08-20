@@ -17,7 +17,7 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-beta-2 (:construction: 2019-08-15)
+## 1.0.0-beta-4 (:construction: 2019-08-20)
 
 ### Fixed
 
@@ -28,6 +28,8 @@ Changelog formatting (http://semver.org/):
 
 ### Changed
 
+- Set the Setup class 'basename' property to static to allow accessing it from within the static activate/deactivate/uninstall methods.
+- Save plugin version in an option instead of always retrieving from `get_plugin_data`.
 - Retrieve the WSU API URL from a plugin setting.
 - :lock: Close #25 Allow only site admins to modify WSU NID usermeta value.
 - :wrench: Replace manual stylelint config file with modified WP default rules.
@@ -45,6 +47,10 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
+- Uninstall methods to handle deleting usermeta, settings, and options saved to the WP database.
+- Logic to update plugin status to "deactivated" on plugin deactivation and to better handle re-activation.
+- Create a plugin status option in the `*_options` table to monitor activation/upgrade status.
+- Set up a method on `admin_init` to watch for version changes to fire upgrade actions if the plugin is sideloaded (skips the activation hook).
 - :sparkles: Close #23 Register a settings page and nav menu item for the plugin as a subpage in the main Settings nav menu.
 - Create the plugin settings page output in a new `views` directory.
 - Set default plugin settings on plugin activation when they don't already exist.
