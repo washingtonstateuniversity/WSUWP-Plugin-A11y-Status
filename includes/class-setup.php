@@ -225,8 +225,8 @@ class Setup {
 			return;
 		}
 
-		$status   = get_option( self::$slug . '_plugin-status' );
-		$plugin   = get_plugin_data( self::$basename );
+		$status = get_option( self::$slug . '_plugin-status' );
+		$plugin = get_plugin_data( self::$basename );
 
 		$saved_version = ( isset( $status['version'] ) ) ? $status['version'] : '0.0.0';
 		$new_version   = ( isset( $plugin['Version'] ) ) ? $plugin['Version'] : '0.0.0';
