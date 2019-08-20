@@ -246,7 +246,10 @@ class Setup {
 		// Check for out-of-date database keys if current user can do updates.
 		if ( current_user_can( 'update_plugins' ) ) {
 			$a11y_status = get_user_meta( get_current_user_id(), self::$slug );
-			if ( ! empty( $a11y_status ) && isset( $a11y_status['isCertified'] ) ) {
+			if (
+				! empty( $a11y_status ) &&
+				( isset( $a11y_status['isCertified'] ) || isset( $a11y_status[0]['isCertified'] ) )
+			) {
 				$status['status'] = 'need_db_update';
 				update_option( self::$slug . '_plugin-status', $status );
 			}
