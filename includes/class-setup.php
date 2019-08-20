@@ -144,7 +144,8 @@ class Setup {
 	 */
 	public function setup_hooks() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
-		add_action( 'admin_init', array( $this, 'handle_plugin_status_actions' ) );
+		add_action( 'admin_init', array( $this, 'manage_plugin_status' ) );
+		add_action( 'admin_init', array( $this, 'handle_plugin_db_update_actions' ) );
 
 		// Admin hooks.
 		add_filter( 'manage_users_columns', 'WSUWP\A11yStatus\admin\add_a11y_status_user_column' );
@@ -215,14 +216,14 @@ class Setup {
 	}
 
 	/**
-	 * Handles actions taken based on the plugin status.
+	 * Manages the plugin status based on version number and database keys.
 	 *
 	 * Checks on the plugin status to watch for updates and activation and calls
-	 * additional actions as needed before resetting the plugin status setting.
+	 * additional actions as needed.
 	 *
 	 * @since 1.0.0
 	 */
-	public function handle_plugin_status_actions() {
+	public function manage_plugin_status() {
 		if ( ! is_admin() || ! function_exists( 'get_plugin_data' ) ) {
 			return;
 		}
@@ -233,18 +234,57 @@ class Setup {
 		$saved_version = ( isset( $status['version'] ) ) ? $status['version'] : '0.0.0';
 		$new_version   = ( isset( $plugin['Version'] ) ) ? $plugin['Version'] : '0.0.0';
 
-		if ( version_compare( $saved_version, '1.0.0', '<' ) ) {
-			// Do plugin upgrade when updating from v0.x to v1.x.
-			self::upgrade();
-		}
-
-		// If the plugin was just activated or the versions don't match, run upgrade actions.
+		// Update the version if just activated or the versions don't match.
 		if ( 'activated' === $status['status'] || $saved_version !== $new_version ) {
 			$status = array(
 				'status'  => 'active',
 				'version' => $new_version,
 			);
 			update_option( self::$slug . '_plugin-status', $status );
+		}
+
+		// Check for out-of-date database keys if current user can do updates.
+		if ( current_user_can( 'update_plugins' ) ) {
+			$a11y_status = get_user_meta( get_current_user_id(), self::$slug );
+			if ( ! empty( $a11y_status ) && isset( $a11y_status['isCertified'] ) ) {
+				$status['status'] = 'need_db_update';
+				update_option( self::$slug . '_plugin-status', $status );
+			}
+		}
+	}
+
+	/**
+	 * Watches for plugin database update requests and handles them.
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_plugin_db_update_actions() {
+		if ( ! isset( $_REQUEST['action'] ) ) {
+			return;
+		}
+
+		if ( self::$slug . '_db_update' === $_REQUEST['action'] ) { // phpcs:ignore WordPress.Security.NonceVerification.NoNonceVerification
+			// Check permissions.
+			if ( ! current_user_can( 'update_plugins' ) ) {
+				wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+			}
+
+			// Check the nonce.
+			if ( ! isset( $_REQUEST['_wpnonce'] ) || ! wp_verify_nonce( $_REQUEST['_wpnonce'], self::$slug . '_db_update' ) ) {
+				wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+			}
+
+			// Checks completed, go ahead and run the update.
+			$this->upgrade();
+
+			// Redirect to a clean URL after the upgrade is finished.
+			wp_safe_redirect(
+				add_query_arg(
+					array( 'action' => self::$slug . '_db_update_complete' ),
+					admin_url( 'plugins.php' )
+				)
+			);
+			exit();
 		}
 	}
 
@@ -284,7 +324,7 @@ class Setup {
 	 *
 	 * @since 1.0.0
 	 */
-	private static function upgrade() {
+	private function upgrade() {
 		if ( ! current_user_can( 'update_plugins' ) ) {
 			return;
 		}
@@ -301,6 +341,17 @@ class Setup {
 			$a11y_status = get_user_meta( $user->ID, self::$slug );
 
 			// If keys exist in the old syntax, update them.
+			if ( isset( $a11y_status['isCertified'] ) ) {
+				$was_certified    = isset( $a11y_status['ever_certified'] ) ? $a11y_status['ever_certified'] : 0;
+				$sanitized_status = array(
+					'is_certified'  => $a11y_status['isCertified'],
+					'was_certified' => $was_certified,
+					'expire_date'   => $a11y_status['Expires'],
+					'last_checked'  => $a11y_status['last_checked'],
+					'training_url'  => $a11y_status['trainingURL'],
+				);
+				update_user_meta( $user->ID, self::$slug, $sanitized_status );
+			}
 			if ( isset( $a11y_status[0]['isCertified'] ) ) {
 				$was_certified    = isset( $a11y_status[0]['ever_certified'] ) ? $a11y_status[0]['ever_certified'] : 0;
 				$sanitized_status = array(
@@ -313,5 +364,9 @@ class Setup {
 				update_user_meta( $user->ID, self::$slug, $sanitized_status );
 			}
 		}
+
+		$options           = get_option( self::$slug . '_plugin-status' );
+		$options['status'] = 'active';
+		update_option( self::$slug . '_plugin-status', $options );
 	}
 }
