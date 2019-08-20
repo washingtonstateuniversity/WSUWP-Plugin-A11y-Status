@@ -59,6 +59,28 @@ function error( $message, $error_code = '500' ) {
  * @return void
  */
 function user_a11y_status_notice__remind() {
+	// Don't show the reminder if the database is out of date.
+	$options = get_option( Init\Setup::$slug . '_plugin-status' );
+	if ( 'need_db_update' === $options['status'] ) {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+		$db_update_uri = wp_nonce_url(
+			add_query_arg(
+				array( 'action' => Init\Setup::$slug . '_db_update' ),
+				admin_url( 'plugins.php' )
+			),
+			Init\Setup::$slug . '_db_update'
+		);
+		printf(
+			'<div class="wsuwp-a11y-status notice notice-warning"><p>%1$s <a href="%2$s"><strong>%3$s</strong></a></p></div>',
+			__( 'The WSU Accessibility Status plugin requires a database update.' ),
+			esc_url( $db_update_uri ),
+			__( 'Update Now' )
+		);
+		return;
+	}
+
 	// Build the messages for uncertified, expired certification, and soon-to-expire certification.
 	if ( ! user\is_user_certified() ) {
 		$class = 'notice-error';
@@ -117,7 +139,6 @@ function user_a11y_status_notice__remind() {
 		</div>
 		<?php
 	}
-
 }
 
 /**
@@ -164,6 +185,13 @@ function user_a11y_status_notice__action() {
 				),
 			);
 		}
+	}
+
+	if ( Init\Setup::$slug . '_db_update_complete' === $_REQUEST['action'] ) {
+		$messages[] = array(
+			'class' => 'notice-success',
+			'text'  => __( 'Updated WSUWP Accessibility Status plugin database.', 'wsuwp-a11y-status' ),
+		);
 	}
 	// phpcs:enable
 
