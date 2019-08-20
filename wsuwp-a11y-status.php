@@ -1,7 +1,7 @@
 <?php
 /*
 Plugin Name: WSUWP A11y Status
-Version: 0.10.0
+Version: 1.0.0-RC1
 Description: A plugin to view users' WSU Accessibility Training status in the Admin area.
 Author: washingtonstateuniversity, Adam Turner
 Author URI: https://github.com/washingtonstateuniversity/
@@ -12,37 +12,37 @@ Tested up to: 5.2.0
 Requires PHP: 5.6
 */
 
+namespace WSUWP\A11yStatus;
+
 // If this file is called directly, abort.
 if ( ! defined( 'WPINC' ) ) {
 	die;
 }
 
 /**
- * Loads the core plugin class.
+ * Loads the core plugin Setup class.
  *
  * @since 0.1.0
  */
 require_once __DIR__ . '/includes/class-setup.php';
 
 // Starts things up.
-add_action( 'plugins_loaded', 'load_wsuwp_a11y_status' );
+add_action( 'plugins_loaded', __NAMESPACE__ . '\load' );
 
 // Flushes rules on activation and cleans up on deactivation.
-register_activation_hook( __FILE__, array( 'WSUWP_A11y_Status', 'activate' ) );
-register_deactivation_hook( __FILE__, array( 'WSUWP_A11y_Status', 'deactivate' ) );
-register_uninstall_hook( __FILE__, array( 'WSUWP_A11y_Status', 'uninstall' ) );
+register_activation_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'activate' ) );
+register_deactivation_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'deactivate' ) );
+register_uninstall_hook( __FILE__, array( __NAMESPACE__ . '\Init\Setup', 'uninstall' ) );
 
 /**
- * Creates an instance of the WSUWP A11y Status class.
+ * Creates an instance of the Setup class.
  *
  * @since 0.1.0
  *
- * @return WSUWP_A11y_Status An instance of the WSUWP_A11y_Status class.
+ * @return Setup An instance of the Setup class.
  */
-function load_wsuwp_a11y_status() {
-	$wsuwp_a11y_status = WSUWP_A11y_Status::get_instance();
-	$wsuwp_a11y_status->setup_hooks();
-	$wsuwp_a11y_status->set_properties( __FILE__ );
+function load() {
+	$wsuwp_a11y_status = Init\Setup::get_instance( __FILE__ );
 
 	return $wsuwp_a11y_status;
 }

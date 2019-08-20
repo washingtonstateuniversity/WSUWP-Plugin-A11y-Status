@@ -1,19 +1,21 @@
 {
-  "name": "washingtonstateuniversity/wsuwp-plugin-a11y-status",
-  "authors": [
-    {
-      "name": "Washington State University"
-    },
-    {
-      "name": "Adam Turner"
-    }
-  ],
-  "require-dev": {
-    "squizlabs/php_codesniffer": "3.x",
-    "wp-coding-standards/wpcs": "2.x"
-  },
-  "scripts": {
-    "post-install-cmd": "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs",
-    "post-update-cmd" : "\"vendor/bin/phpcs\" --config-set installed_paths vendor/wp-coding-standards/wpcs"
-  }
+	"name": "washingtonstateuniversity/wsuwp-plugin-a11y-status",
+	"license": "GPL-2.0-or-later",
+	"authors": [
+		{
+			"name": "Washington State University"
+		},
+		{
+			"name": "Adam Turner"
+		}
+	],
+	"require-dev": {
+		"dealerdirect/phpcodesniffer-composer-installer": "~0.5.0",
+		"wp-coding-standards/wpcs": "~2.1.1"
+	},
+	"scripts": {
+		"format": "phpcbf --standard=phpcs.xml.dist --report-summary --report-source",
+		"lint-summary": "phpcs --standard=phpcs.xml.dist --colors --report-summary --report-source",
+		"lint-detail": "phpcs --standard=phpcs.xml.dist --colors"
+	}
 }

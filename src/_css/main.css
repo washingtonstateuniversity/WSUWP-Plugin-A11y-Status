@@ -2,7 +2,6 @@
 Plugin Name: WSUWP A11y Status
 Author: WSU University Communication, Adam Turner
 Author URI: https://web.wsu.edu/
-Version: 0.10.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 */
@@ -19,18 +18,18 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 	margin-left: 1rem;
 }
 
-.column-a11y_status .dashicons-before:before {
+.column-a11y_status .dashicons-before::before {
 	padding-right: 5px;
 }
 
-.column-a11y_status .notice-error.dashicons-before:before {
+.column-a11y_status .notice-error.dashicons-before::before {
 	color: #dc3232;
 }
 
-.column-a11y_status .notice-warning.dashicons-before:before {
+.column-a11y_status .notice-warning.dashicons-before::before {
 	color: #ffb900;
 }
 
-.column-a11y_status .notice-success.dashicons-before:before {
+.column-a11y_status .notice-success.dashicons-before::before {
 	color: #46b450;
 }

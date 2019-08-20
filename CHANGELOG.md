@@ -17,6 +17,57 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 1.0.0-RC1 (:construction: 2019-08-20)
+
+### Fixed
+
+- :bug: User a11y status functions should exit silently when no data exists.
+- :bug: Using a nonexistent variable in `get_user_a11y_training_url`.
+- Fix #18 Don't modify a11y expiration date when certification expires. Keep the old expiration date until certification is renewed.
+- :bug: Fix #17 Don't overwrite `was_certified` value on expiration. Merge existing data with new data instead of replacing it entirely.
+- :warning: PHP and CSS lint warnings from updated rules.
+
+### Changed
+
+- :arrow_up: Upgrade rimraf NPM package to 3.0.0.
+- :arrow_up: Upgrade wp-coding-standards/wpcs Composer package to 2.1.1.
+- Set the Setup class 'basename' property to static to allow accessing it from within the static activate/deactivate/uninstall methods.
+- Save plugin version in an option instead of always retrieving from `get_plugin_data`.
+- Retrieve the WSU API URL from a plugin setting.
+- :lock: Close #25 Allow only site admins to modify WSU NID usermeta value.
+- :wrench: Replace manual stylelint config file with modified WP default rules.
+- :wrench: Update npm package metadata and scripts.
+- :wrench: Close #20 Use up-to-date WP linting configuration.
+- :truck: Move plugin settings API methods to a dedicated `settings.php` file.
+- :truck: Move all user messaging functions to a dedicated `notices.php` file.
+- :truck: Move all admin page functions to a dedicated `admin.php` file.
+- :truck: Move all user-related functions, like getting/setting user meta, to a dedicated User API file.
+- Simplify setting the plugin basename value in the Setup class.
+- :recycle: Standardize user a11y meta methods to use similar syntax.
+- :truck: Move sanitizing and formatting methods to a dedicated formatting API file.
+- :truck: Move API handler from the setup class to a dedicated API class.
+- Use namespaces in all PHP files.
+
+### Added
+
+- Close #26 Plugin update methods to watch for out-of-date database keys, prompt the user to update the database, and process the update action.
+- Uninstall methods to handle deleting usermeta, settings, and options saved to the WP database.
+- Logic to update plugin status to "deactivated" on plugin deactivation and to better handle re-activation.
+- Create a plugin status option in the `*_options` table to monitor activation/upgrade status.
+- Set up a method on `admin_init` to watch for version changes to fire upgrade actions if the plugin is sideloaded (skips the activation hook).
+- :sparkles: Close #23 Register a settings page and nav menu item for the plugin as a subpage in the main Settings nav menu.
+- Create the plugin settings page output in a new `views` directory.
+- Set default plugin settings on plugin activation or manual upgrade when they don't already exist.
+- :heavy_plus_sign: WP stylelint configuration npm dev dependency.
+- :wrench: Configuration file for the `npm-package-json-lint` dependency.
+- :heavy_plus_sign: NPM dev dependencies for linting `package.json` files.
+
+### Removed
+
+- :fire: Not using a grace period, so remove all of those functions and logic.
+- :fire: Not fetching data for all users so remove the `get_usernames_list` method.
+- Fix #22 Don't automatically fetch accessibility status data for all users on plugin activation or login.
+
 ## 0.10.0 (2019-08-07)
 
 ### Fixed
