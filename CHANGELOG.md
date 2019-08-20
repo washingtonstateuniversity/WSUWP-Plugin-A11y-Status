@@ -17,7 +17,7 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-beta-6 (:construction: 2019-08-20)
+## 1.0.0-RC1 (:construction: 2019-08-20)
 
 ### Fixed
 
