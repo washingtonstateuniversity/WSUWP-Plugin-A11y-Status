@@ -11,6 +11,38 @@ namespace WSUWP\A11yStatus\settings;
 use WSUWP\A11yStatus\Init;
 
 /**
+ * Assigns the default plugin settings when they do not already exist.
+ *
+ * Only fires on plugin activation, and only for settings that can be
+ * modified from the plugins settings page.
+ *
+ * @since 1.0.0
+ */
+function set_default_settings() {
+	$default_settings = array(
+		'api_url' => 'https://webserv.wsu.edu/accessibility/training/service',
+	);
+	$current_settings = get_option( Init\Setup::$slug . '_options' );
+
+	$settings = array();
+	if ( ! $current_settings ) {
+		// Use the defaults if there are no existing settings.
+		$settings = $default_settings;
+	} else {
+		// If settings already exist, don't overwrite them.
+		foreach ( $default_settings as $key => $value ) {
+			if ( ! isset( $current_settings[ $key ] ) ) {
+				$settings[ $key ] = $value;
+			} else {
+				$settings[ $key ] = $current_settings[ $key ];
+			}
+		}
+	}
+	update_option( Init\Setup::$slug . '_options', $settings );
+}
+
+
+/**
  * Displays a field on the user profile screen to add a WSU NID.
  *
  * Callback method for the `edit_user_profile` and `show_user_profile` hooks
