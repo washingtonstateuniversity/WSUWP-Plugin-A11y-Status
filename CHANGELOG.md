@@ -17,7 +17,7 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-beta-5 (:construction: 2019-08-20)
+## 1.0.0-beta-6 (:construction: 2019-08-20)
 
 ### Fixed
 
@@ -57,7 +57,7 @@ Changelog formatting (http://semver.org/):
 - Set up a method on `admin_init` to watch for version changes to fire upgrade actions if the plugin is sideloaded (skips the activation hook).
 - :sparkles: Close #23 Register a settings page and nav menu item for the plugin as a subpage in the main Settings nav menu.
 - Create the plugin settings page output in a new `views` directory.
-- Set default plugin settings on plugin activation when they don't already exist.
+- Set default plugin settings on plugin activation or manual upgrade when they don't already exist.
 - :heavy_plus_sign: WP stylelint configuration npm dev dependency.
 - :wrench: Configuration file for the `npm-package-json-lint` dependency.
 - :heavy_plus_sign: NPM dev dependencies for linting `package.json` files.
