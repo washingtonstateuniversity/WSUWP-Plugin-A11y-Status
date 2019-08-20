@@ -36,9 +36,10 @@ class Setup {
 	 * The plugin file basename.
 	 *
 	 * @since 0.8.0
-	 * @var array
+	 * @since 1.0.0 Converted to public static access.
+	 * @var string
 	 */
-	private $basename;
+	public static $basename;
 
 	/**
 	 * Instantiates WSUWP A11y Status singleton.
@@ -51,11 +52,11 @@ class Setup {
 		static $instance;
 
 		if ( ! isset( $instance ) ) {
-			$instance = new Setup();
+			$instance        = new Setup();
+			Setup::$basename = $file;
 
 			$instance->setup_hooks();
 			$instance->includes();
-			$instance->basename = $file;
 		}
 
 		return $instance;
@@ -73,31 +74,26 @@ class Setup {
 	/**
 	 * Activates the WSUWP A11y Status plugin.
 	 *
-	 * Sets the default plugin settings if they don't already exist.
-	 *
 	 * @since 0.1.0
 	 */
 	public static function activate() {
-		$default_settings = array(
-			'api_url' => 'https://webserv.wsu.edu/accessibility/training/service',
-		);
-		$current_settings = get_option( self::$slug . '_options' );
-
-		$settings = array();
-		if ( ! $current_settings ) {
-			// Use the defaults if there are no existing settings.
-			$settings = $default_settings;
+		/**
+		 * Track activation with an option because the activation hook fires
+		 * before the plugin is actually set up, which prevents taking certain
+		 * actions in this method.
+		 *
+		 * @link https://stackoverflow.com/questions/7738953/is-there-a-way-to-determine-if-a-wordpress-plugin-is-just-installed/13927297#13927297
+		 */
+		$options = get_option( self::$slug . '_plugin-status' );
+		if ( ! $options ) {
+			add_option( self::$slug . '_plugin-status', array( 'status' => 'activated' ) );
 		} else {
-			// If settings already exist, don't overwrite them.
-			foreach ( $default_settings as $key => $value ) {
-				if ( ! isset( $current_settings[ $key ] ) ) {
-					$settings[ $key ] = $value;
-				} else {
-					$settings[ $key ] = $current_settings[ $key ];
-				}
-			}
+			$options['status'] = 'activated';
+			update_option( self::$slug . '_plugin-status', $options );
 		}
-		add_option( self::$slug . '_options', $settings );
+
+		// Sets the default plugin settings if they don't already exist.
+		self::set_default_settings();
 	}
 
 	/**
@@ -106,7 +102,11 @@ class Setup {
 	 * @since 0.1.0
 	 */
 	public static function deactivate() {
-		// Nothing for now.
+		// Set plugin status to 'deactivated'.
+		$options           = get_option( self::$slug . '_plugin-status' );
+		$options['status'] = 'deactivated';
+
+		update_option( self::$slug . '_plugin-status', $options );
 	}
 
 	/**
@@ -121,13 +121,20 @@ class Setup {
 
 		// Delete all user metadata saved by the plugin.
 		$users = get_users( array( 'fields' => array( 'ID' ) ) );
-
 		foreach ( $users as $user ) {
-			user\delete_a11y_user_meta( $user );
-			delete_user_meta( absint( $user->ID ), '_wsu_nid' );
+			delete_user_meta( $user->ID, self::$slug );
+			delete_user_meta( $user->ID, '_wsu_nid' );
 		}
 
-		// TODO Unregister settings using `unregister_setting()`
+		// Unregister plugin settings.
+		unregister_setting(
+			self::$slug,
+			self::$slug . '_options'
+		);
+
+		// Delete plugin options.
+		delete_option( self::$slug . '_plugin-status' );
+		delete_option( self::$slug . '_options' );
 	}
 
 	/**
@@ -137,6 +144,7 @@ class Setup {
 	 */
 	public function setup_hooks() {
 		add_action( 'admin_enqueue_scripts', array( $this, 'enqueue_scripts' ) );
+		add_action( 'admin_init', array( $this, 'handle_plugin_status_actions' ) );
 
 		// Admin hooks.
 		add_filter( 'manage_users_columns', 'WSUWP\A11yStatus\admin\add_a11y_status_user_column' );
@@ -194,12 +202,116 @@ class Setup {
 	 * @since 0.1.0
 	 */
 	public function enqueue_scripts() {
-		$plugin_meta = get_plugin_data( $this->basename );
+		// Get the plugin version, if it exists, or set to fallback '0.0.0'.
+		$plugin  = get_option( self::$slug . '_plugin-status' );
+		$version = ( isset( $plugin['version'] ) ) ? $plugin['version'] : '0.0.0';
+
 		wp_enqueue_style(
 			'wsuwp-a11y-status-dashboard',
 			plugins_url( 'css/main.css', __DIR__ ),
 			array(),
-			$plugin_meta['Version']
+			$version
 		);
+	}
+
+	/**
+	 * Handles actions taken based on the plugin status.
+	 *
+	 * Checks on the plugin status to watch for updates and activation and calls
+	 * additional actions as needed before resetting the plugin status setting.
+	 *
+	 * @since 1.0.0
+	 */
+	public function handle_plugin_status_actions() {
+		if ( ! is_admin() || ! function_exists( 'get_plugin_data' ) ) {
+			return;
+		}
+
+		$status = get_option( self::$slug . '_plugin-status' );
+		$plugin = get_plugin_data( self::$basename );
+
+		$saved_version = ( isset( $status['version'] ) ) ? $status['version'] : '0.0.0';
+		$new_version   = ( isset( $plugin['Version'] ) ) ? $plugin['Version'] : '0.0.0';
+
+		if ( version_compare( $saved_version, '1.0.0', '<' ) ) {
+			// Do plugin upgrade when updating from v0.x to v1.x.
+			self::upgrade();
+		}
+
+		// If the plugin was just activated or the versions don't match, run upgrade actions.
+		if ( 'activated' === $status['status'] || $saved_version !== $new_version ) {
+			$status = array(
+				'status'  => 'active',
+				'version' => $new_version,
+			);
+			update_option( self::$slug . '_plugin-status', $status );
+		}
+	}
+
+	/**
+	 * Assigns the default plugin settings when they do not already exist.
+	 *
+	 * Only fires on plugin activation, and only for settings that can be
+	 * modified from the plugins settings page.
+	 *
+	 * @since 1.0.0
+	 */
+	private static function set_default_settings() {
+		$default_settings = array(
+			'api_url' => 'https://webserv.wsu.edu/accessibility/training/service',
+		);
+		$current_settings = get_option( self::$slug . '_options' );
+
+		$settings = array();
+		if ( ! $current_settings ) {
+			// Use the defaults if there are no existing settings.
+			$settings = $default_settings;
+		} else {
+			// If settings already exist, don't overwrite them.
+			foreach ( $default_settings as $key => $value ) {
+				if ( ! isset( $current_settings[ $key ] ) ) {
+					$settings[ $key ] = $value;
+				} else {
+					$settings[ $key ] = $current_settings[ $key ];
+				}
+			}
+		}
+		update_option( self::$slug . '_options', $settings );
+	}
+
+	/**
+	 * Handles tasks required for plugin upgrades.
+	 *
+	 * @since 1.0.0
+	 */
+	private static function upgrade() {
+		if ( ! current_user_can( 'update_plugins' ) ) {
+			return;
+		}
+
+		$users = get_users(
+			array(
+				'meta_key'     => self::$slug,
+				'meta_value'   => '',
+				'meta_compare' => '!=',
+				'fields'       => array( 'ID' ),
+			)
+		);
+		foreach ( $users as $user ) {
+			$a11y_status = get_user_meta( $user->ID, self::$slug );
+
+			// If keys exist in the old syntax, update them.
+			if ( isset( $a11y_status[0]['isCertified'] ) ) {
+				$was_certified    = isset( $a11y_status[0]['ever_certified'] ) ? $a11y_status[0]['ever_certified'] : 0;
+				$sanitized_status = array(
+					'is_certified'  => $a11y_status[0]['isCertified'],
+					'was_certified' => $was_certified,
+					'expire_date'   => $a11y_status[0]['Expires'],
+					'last_checked'  => $a11y_status[0]['last_checked'],
+					'training_url'  => $a11y_status[0]['trainingURL'],
+				);
+				update_user_meta( $user->ID, self::$slug, $sanitized_status );
+			}
+		}
 	}
 }
