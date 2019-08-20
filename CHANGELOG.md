@@ -17,10 +17,11 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-beta-4 (:construction: 2019-08-20)
+## 1.0.0-beta-5 (:construction: 2019-08-20)
 
 ### Fixed
 
+- :bug: User a11y status functions should exit silently when no data exists.
 - :bug: Using a nonexistent variable in `get_user_a11y_training_url`.
 - Fix #18 Don't modify a11y expiration date when certification expires. Keep the old expiration date until certification is renewed.
 - :bug: Fix #17 Don't overwrite `was_certified` value on expiration. Merge existing data with new data instead of replacing it entirely.
@@ -28,6 +29,8 @@ Changelog formatting (http://semver.org/):
 
 ### Changed
 
+- :arrow_up: Upgrade rimraf NPM package to 3.0.0.
+- :arrow_up: Upgrade wp-coding-standards/wpcs Composer package to 2.1.1.
 - Set the Setup class 'basename' property to static to allow accessing it from within the static activate/deactivate/uninstall methods.
 - Save plugin version in an option instead of always retrieving from `get_plugin_data`.
 - Retrieve the WSU API URL from a plugin setting.
@@ -47,6 +50,7 @@ Changelog formatting (http://semver.org/):
 
 ### Added
 
+- Plugin update methods to watch for out-of-date database keys, prompt the user to update the database, and process the update action.
 - Uninstall methods to handle deleting usermeta, settings, and options saved to the WP database.
 - Logic to update plugin status to "deactivated" on plugin deactivation and to better handle re-activation.
 - Create a plugin status option in the `*_options` table to monitor activation/upgrade status.
