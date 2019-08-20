@@ -8,38 +8,36 @@ This WordPress plugin is designed to help site administrators monitor the WSU We
 
 ## Description
 
-WSUWP A11y (Accessibility) Status retrieves WSU Web Accessibility Training status data from the WSU Accessibility Training API for all users registered on a WordPress site using a WSU email address. **(Users must be registered with their WSU email in order to retrieve data.)**
+WSUWP A11y (Accessibility) Status retrieves WSU Web Accessibility Training status data from the WSU Accessibility Training API using a WSU network ID. The plugin adds a "WSU NID" field on the user profile page where site admins can enter a WSU NID for each user. When doing an API call, it'll check for this value first, and then fall back to the user portion of the user email address. This means valid WSU email addresses will work without the need to set the WSU NID value manually.
 
 ### All users will see:
 
-- A warning notice in the WordPress admin area with a link to take the training if they are not WSU Accessibility certified or if their certification has expired.
-- A caution notice in the WP admin area if their certification is due to expire in less than one (1) month, also with a link to take the training.
+- An error notice in the WordPress admin area with a link to take the training if they are not WSU Accessibility certified or if their certification has expired.
+- A warning notice in the WordPress admin area if their certification is due to expire in less than one (1) month, also with a link to take the training.
 
 ### Admin users will also see:
 
-- An additional column in the users table list on the Users screen showing the WSU Accessibility Training status for each user: "None" for users that are not certified and the time remaining until required recertification for users that are.
+- An additional column in the users table on the Users screen showing the WSU Accessibility Training status for each user: "None" for users that are not certified and the time remaining until required recertification for users that are. (Admins can also hover over this value to display a tooltip with the date of the last successful API call.)
 
 ## For Developers
 
-The WSU HRS Theme development environment relies primarily on the NPM and Composer package managers. The `package.json` and `composer.json` configuration files will install the necessary dependencies for testing and building the production version of the theme. The NPM scripts in `package.json` do most of the heavy lifting.
+The WSUWP A11y Status plugin development environment relies primarily on NPM and Composer. The `package.json` and `composer.json` configuration files manage necessary dependencies for testing and building the production version of the theme. The NPM scripts in `package.json` do most of the heavy lifting.
 
 ### Initial Setup
 
 1. Clone the WSUWP A11y Status plugin to a directory on your computer.
 2. Change into that directory.
-3. Install the Composer dependencies.
-4. Install the NPM dependencies.
-5. Ensure PHP and CSS linting coding standards checks are working -- this should exit with zero (0) errors.
-6. Create a new branch for local development.
+3. Install the NPM and Composer dependencies.
+4. Ensure linting and coding standards checks are working -- this should exit with zero (0) errors.
+5. Create a new branch for local development.
 
 In a terminal:
 
 ~~~bash
 git clone https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status.git wsuwp-a11y-status
 cd wsuwp-a11y-status
-composer install
-npm install
-npm test
+npm install; composer install
+npm test -s
 git checkout -b new-branch-name
 ~~~
 
@@ -47,7 +45,9 @@ git checkout -b new-branch-name
 
 The following commands will handle basic build functions. (Remove the `-s` flag to show additional debug info.)
 
-- `npm run build`: Remove old compiled files such as minified CSS, lint PHP and CSS, and then compile new versions.
-- `npm test`: Check all PHP and CSS files for coding standards compliance.
-- `npm run clean`: Remove old compiled files such as minified CSS.
-- `npm run style`: Compile CSS.
+- `npm run build -s`: Remove old compiled files such as minified CSS, lint PHP and CSS, and then compile new versions.
+- `npm test -s`: Check all PHP and CSS files for coding standards compliance.
+- `npm run clean -s`: Remove old compiled files such as minified CSS.
+- `npm run build:styles -s`: Compile CSS.
+
+See the scripts section of `package.json` for additional available commands.
