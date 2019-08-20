@@ -91,9 +91,6 @@ class Setup {
 			$options['status'] = 'activated';
 			update_option( self::$slug . '_plugin-status', $options );
 		}
-
-		// Sets the default plugin settings if they don't already exist.
-		self::set_default_settings();
 	}
 
 	/**
@@ -228,8 +225,8 @@ class Setup {
 			return;
 		}
 
-		$status = get_option( self::$slug . '_plugin-status' );
-		$plugin = get_plugin_data( self::$basename );
+		$status   = get_option( self::$slug . '_plugin-status' );
+		$plugin   = get_plugin_data( self::$basename );
 
 		$saved_version = ( isset( $status['version'] ) ) ? $status['version'] : '0.0.0';
 		$new_version   = ( isset( $plugin['Version'] ) ) ? $plugin['Version'] : '0.0.0';
@@ -241,6 +238,9 @@ class Setup {
 				'version' => $new_version,
 			);
 			update_option( self::$slug . '_plugin-status', $status );
+
+			// Sets the default plugin settings if they don't already exist.
+			settings\set_default_settings();
 		}
 
 		// Check for out-of-date database keys if current user can do updates.
@@ -289,37 +289,6 @@ class Setup {
 			);
 			exit();
 		}
-	}
-
-	/**
-	 * Assigns the default plugin settings when they do not already exist.
-	 *
-	 * Only fires on plugin activation, and only for settings that can be
-	 * modified from the plugins settings page.
-	 *
-	 * @since 1.0.0
-	 */
-	private static function set_default_settings() {
-		$default_settings = array(
-			'api_url' => 'https://webserv.wsu.edu/accessibility/training/service',
-		);
-		$current_settings = get_option( self::$slug . '_options' );
-
-		$settings = array();
-		if ( ! $current_settings ) {
-			// Use the defaults if there are no existing settings.
-			$settings = $default_settings;
-		} else {
-			// If settings already exist, don't overwrite them.
-			foreach ( $default_settings as $key => $value ) {
-				if ( ! isset( $current_settings[ $key ] ) ) {
-					$settings[ $key ] = $value;
-				} else {
-					$settings[ $key ] = $current_settings[ $key ];
-				}
-			}
-		}
-		update_option( self::$slug . '_options', $settings );
 	}
 
 	/**
