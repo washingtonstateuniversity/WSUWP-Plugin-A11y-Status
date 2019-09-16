@@ -4,7 +4,7 @@
 
 ## Overview
 
-This WordPress plugin is designed to help site administrators monitor the WSU Web Accessibility Training status of all users on the site and to notify individual users when their training status needs attention.
+This WordPress plugin helps site administrators monitor the WSU Web Accessibility Training status of all users on the site and to notify individual users when their training status needs attention.
 
 ## Description
 
