@@ -17,7 +17,7 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
-## 1.0.0-RC1 (:construction: 2019-08-20)
+## 1.0.0 (2019-09-16)
 
 ### Fixed
 
@@ -29,8 +29,6 @@ Changelog formatting (http://semver.org/):
 
 ### Changed
 
-- :arrow_up: Upgrade rimraf NPM package to 3.0.0.
-- :arrow_up: Upgrade wp-coding-standards/wpcs Composer package to 2.1.1.
 - Set the Setup class 'basename' property to static to allow accessing it from within the static activate/deactivate/uninstall methods.
 - Save plugin version in an option instead of always retrieving from `get_plugin_data`.
 - Retrieve the WSU API URL from a plugin setting.
@@ -47,6 +45,9 @@ Changelog formatting (http://semver.org/):
 - :truck: Move sanitizing and formatting methods to a dedicated formatting API file.
 - :truck: Move API handler from the setup class to a dedicated API class.
 - Use namespaces in all PHP files.
+- :arrow_up: Composer wp-coding-standards/wpcs to 2.1.1.
+- :arrow_up: npm stylelint 10.1.0 to 11.0.0.
+- :arrow_up: npm rimraf to 3.0.0.
 
 ### Added
 
