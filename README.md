@@ -1,6 +1,6 @@
 # WSUWP A11y Status
 
-[![Build Status](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status.svg?branch=master)](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status)
+[![Build Status](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status.svg?branch=stable)](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status)
 
 ## Overview
 
