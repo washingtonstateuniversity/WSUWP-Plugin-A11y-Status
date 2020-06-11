@@ -17,6 +17,12 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 1.0.1 (2020-06-11)
+
+### Changed
+
+- Rename "master" branch to "stable." See the Internet Engineering Task Force (IEFT), [Terminology, Power and Oppressive Language](https://tools.ietf.org/id/draft-knodel-terminology-00.html#rfc.section.1.1.1).
+
 ## 1.0.0 (2019-09-16)
 
 ### Fixed
