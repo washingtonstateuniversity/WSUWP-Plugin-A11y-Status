@@ -1,3 +1,6 @@
 {
-	"extends": "@wordpress/npm-package-json-lint-config"
+	"extends": "@wordpress/npm-package-json-lint-config",
+	"rules": {
+		"valid-values-license": "off"
+	}
 }
