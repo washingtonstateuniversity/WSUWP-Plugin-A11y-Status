@@ -10,12 +10,15 @@
 		}
 	],
 	"require-dev": {
-		"dealerdirect/phpcodesniffer-composer-installer": "~0.5.0",
-		"wp-coding-standards/wpcs": "~2.1.1"
+		"dealerdirect/phpcodesniffer-composer-installer": "~0.7.1",
+		"squizlabs/php_codesniffer": "^3.6.0",
+		"phpcompatibility/php-compatibility": "^9.2.0",
+		"wp-coding-standards/wpcs": "~2.3.0",
+		"sirbrillig/phpcs-variable-analysis": "^2.11.2",
+		"roave/security-advisories": "dev-master"
 	},
 	"scripts": {
-		"format": "phpcbf --standard=phpcs.xml.dist --report-summary --report-source",
-		"lint-summary": "phpcs --standard=phpcs.xml.dist --colors --report-summary --report-source",
-		"lint-detail": "phpcs --standard=phpcs.xml.dist --colors"
+		"format": "phpcbf --standard=phpcs.xml.dist --report=summary,source",
+		"lint": "phpcs --colors"
 	}
 }
