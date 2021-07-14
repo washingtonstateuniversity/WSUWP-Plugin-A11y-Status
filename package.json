@@ -30,7 +30,7 @@
 	],
 	"devDependencies": {
 		"@wordpress/npm-package-json-lint-config": "^2.1.0",
-		"cssnano": "^4.1.x",
+		"cssnano": "^5.0.6",
 		"npm-package-json-lint": "^3.7.0",
 		"npm-run-all": "^4.1.x",
 		"postcss": "^8.3.5",
