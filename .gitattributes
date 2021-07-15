@@ -1,6 +1,5 @@
 * text=auto
 
-.github export-ignore
 .editorconfig export-ignore
 .gitattributes export-ignore
 .gitignore export-ignore
@@ -8,9 +7,11 @@
 .stylelintrc.json export-ignore
 composer.json export-ignore
 composer.lock export-ignore
+CONTRIBUTING.md export-ignore
 package.json export-ignore
 package-lock.json export-ignore
 phpcs.xml.dist export-ignore
 postcss.config.js export-ignore
+/.github export-ignore
 /bin export-ignore
 /src export-ignore
