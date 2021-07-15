@@ -92,7 +92,7 @@ function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
  * @return string[] The modified array of action links to be displayed.
  */
 function add_a11y_status_user_row_action( $actions, $user_object ) {
-	if ( current_user_can( 'list_users' ) ) {
+	if ( current_user_can( 'edit_users') ) {
 		$update_uri = wp_nonce_url(
 			add_query_arg(
 				array(
@@ -146,8 +146,8 @@ function handle_a11y_status_actions() {
 		$user_id = ( isset( $_REQUEST['user_id'] ) ) ? absint( $_REQUEST['user_id'] ) : 0;
 
 		// Check permissions. Non-admins cannot update other users' information.
-		if ( $current_user->ID !== $user_id && ! current_user_can( 'list_users' ) ) {
-			wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+		if ( $current_user->ID !== $user_id && ! current_user_can( 'edit_users') ) {
+			wp_die( esc_html__( 'You do not have permission to manage users.', 'wsuwp-a11y-status' ) );
 		}
 
 		// Check the nonce.
@@ -183,8 +183,8 @@ function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) 
 	}
 
 	// Check permissions. Non-admins cannot update other users' information.
-	if ( ! current_user_can( 'list_users' ) ) {
-		wp_die( esc_html__( 'You do not have permission to do this thing.', 'wsuwp-a11y-status' ) );
+	if ( ! current_user_can( 'edit_users') ) {
+		wp_die( esc_html__( 'You do not have permission to update users.', 'wsuwp-a11y-status' ) );
 	}
 
 	// Perform an update for each selected user and count successes.
