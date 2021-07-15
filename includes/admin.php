@@ -79,6 +79,16 @@ function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
 }
 
 /**
+ * Makes the A11y Status column of the users table sortable.
+ *
+ * @param array $columns An array of users table columns.
+ * @return array The modified array of sortable user table columns.
+ */
+function manage_a11y_status_user_column_sortable( $columns ) {
+	return wp_parse_args( array( 'a11y_status' => 'wsuwp_a11y_status' ), $columns );
+}
+
+/**
  * Adds an "Update A11y" link to each list of user actions on the Users screen.
  *
  * Callback method for the `user_row_actions` filter hook. This adds an
@@ -92,7 +102,7 @@ function manage_a11y_status_user_column( $output, $column_name, $user_id ) {
  * @return string[] The modified array of action links to be displayed.
  */
 function add_a11y_status_user_row_action( $actions, $user_object ) {
-	if ( current_user_can( 'edit_users') ) {
+	if ( current_user_can( 'edit_users' ) ) {
 		$update_uri = wp_nonce_url(
 			add_query_arg(
 				array(
@@ -146,7 +156,7 @@ function handle_a11y_status_actions() {
 		$user_id = ( isset( $_REQUEST['user_id'] ) ) ? absint( $_REQUEST['user_id'] ) : 0;
 
 		// Check permissions. Non-admins cannot update other users' information.
-		if ( $current_user->ID !== $user_id && ! current_user_can( 'edit_users') ) {
+		if ( $current_user->ID !== $user_id && ! current_user_can( 'edit_users' ) ) {
 			wp_die( esc_html__( 'You do not have permission to manage users.', 'wsuwp-a11y-status' ) );
 		}
 
@@ -183,7 +193,7 @@ function handle_a11y_status_bulk_actions( $redirect_url, $doaction, $user_ids ) 
 	}
 
 	// Check permissions. Non-admins cannot update other users' information.
-	if ( ! current_user_can( 'edit_users') ) {
+	if ( ! current_user_can( 'edit_users' ) ) {
 		wp_die( esc_html__( 'You do not have permission to update users.', 'wsuwp-a11y-status' ) );
 	}
 
