@@ -45,8 +45,6 @@ function get_user_wsu_nid( $user ) {
  */
 function handle_user_login( $user_login, $user ) {
 	update_a11y_user_meta( $user );
-
-	// TODO Modify the user registration email to notify them of their status.
 }
 
 /**
