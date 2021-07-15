@@ -31,16 +31,14 @@ function error( $message, $error_code = '500' ) {
 	if ( is_array( $message ) ) {
 		foreach ( $message as $msg ) {
 			printf(
-				/* translators: 1: the plugin name, 2: the error message */
-				__( '<div class="notice notice-error"><p><strong>%1$s error:</strong> %2$s</p></div>', 'wsuwp-a11y-status' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+				'<div class="notice notice-error"><p><strong>%1$s error:</strong> %2$s</p></div>',
 				esc_html( Init\Setup::$slug ),
 				esc_html( $msg['message'] )
 			);
 		}
 	} else {
 		printf(
-			/* translators: 1: the plugin name, 2: the error message */
-			__( '<div class="notice notice-error"><p><strong>%1$s error:</strong> %2$s</p></div>', 'wsuwp-a11y-status' ), // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped
+			'<div class="notice notice-error"><p><strong>%1$s error:</strong> %2$s</p></div>',
 			esc_html( Init\Setup::$slug ),
 			esc_html( $message )
 		);
