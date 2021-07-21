@@ -284,7 +284,7 @@ class Setup {
 			// Redirect to a clean URL after the upgrade is finished.
 			wp_safe_redirect(
 				add_query_arg(
-					array( 'action' => self::$slug . '_db_update_complete' ),
+					array( 'update_a11y' => self::$slug . '_db_update_complete' ),
 					admin_url( 'plugins.php' )
 				)
 			);
