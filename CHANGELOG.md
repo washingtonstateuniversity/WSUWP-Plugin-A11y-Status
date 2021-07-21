@@ -17,6 +17,10 @@ Changelog formatting (http://semver.org/):
 ### Removed (for deprecated features removed in this release)
 -->
 
+## 1.1.0-rc.1 (:construction: Future)
+
+
+
 ## 1.0.1 (2020-06-11)
 
 ### Changed
