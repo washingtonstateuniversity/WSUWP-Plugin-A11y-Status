@@ -4,22 +4,61 @@ Authors: Adam Turner, Washington State University
 URI: https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status/
 
 <!--
-Changelog formatting (http://semver.org/):
+Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 
 ## Major.MinorAddorDeprec.Bugfix YYYY-MM-DD
 
-### To Do (for upcoming changes)
-### Security (in case of fixed vulnerabilities)
-### Fixed (for any bug fixes)
-### Changed (for changes in existing functionality)
-### Added (for new features)
-### Deprecated (for once-stable features removed in upcoming releases)
-### Removed (for deprecated features removed in this release)
+### Added (for new features.)
+### Changed (for changes in existing functionality.)
+### Deprecated (for soon-to-be removed features.)
+### Removed (for now removed features.)
+### Fixed (for any bug fixes.)
+### Security (in case of vulnerabilities.)
 -->
 
 ## 1.1.0-rc.1 (:construction: Future)
 
+### Added
 
+- Close #24 add feature to send a11y reminder to users via email. (6ecc917)
+- Create pull request and issue templates, close #39. (9ffffe1)
+- Guide for contributors in CONTRIBUTING.md. (9ffffe1)
+- Add postcss dependency for postcss-cli. (f0fd2ef)
+
+### Changed
+
+- Close #28 make a11y status user table column sortable. (855dd27)
+- Close #29 set default permission level to network/site admin. (c1d98b7)
+- Update README document with new badges and add contributing info. (9ffffe1)
+- Replace stylelint-config-wordpress with @wordpress/stylelint-config. (136b69e)
+- Replace Travis CI in favor of GitHub Actions for coding standards CI. (c5200f6)
+- Replace GPL license 2.0 with GPL license 3.0. (5dcb580, fe4b583)
+- Update Composer dependencies for v2 and simplify scripts. (d4ce1e8)
+- Upgrade postcss-cli from 6.1.3 to 8.3.1. (f0fd2ef)
+- Upgrade cssnano from 4.1.x to 5.0.7. (f0fd2ef, b5c0935)
+- Upgrade NPM Package JSON Lint and config. (7758fa6, b5c0935)
+- Upgrade stylelint from 11.0.0 to 13.13.1. (136b69e)
+- Bump hosted-git-info from 2.7.1 to 2.8.9. (ff9d4b2)
+- Update @wordpress/stylelint-config from 19.0.5 to 19.1.0. (b5c0935)
+
+### Removed
+
+- Remove unneeded script linting in build tools. (b351611)
+
+### Fixed
+
+- Fix no html content in translated string linting issue. (9bad7c4)
+
+### Security
+
+- Bump postcss from 8.3.5 to 8.3.6. (b5c0935)
+- Bump rimraf from 3.0.0 to 3.0.2. (92fbc64)
+- Bump browserslist from 4.4.1 to 4.16.6. (5f3d794)
+- Bump lodash from 4.17.19 to 4.17.21. (4cfcc76)
+- Bump y18n from 4.0.0 to 4.0.1. (642215a)
+- Bump dot-prop from 4.2.0 to 4.2.1. (dfdc424)
+- Bump ini from 1.3.5 to 1.3.7. (d8ad793)
+- Bump lodash from 4.17.15 to 4.17.19. (dc88f93)
 
 ## 1.0.1 (2020-06-11)
 
