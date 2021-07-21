@@ -148,44 +148,64 @@ function user_a11y_status_notice__remind() {
  */
 function user_a11y_status_notice__action() {
 	// phpcs:disable WordPress.Security.NonceVerification.Recommended
-	if ( ! isset( $_REQUEST['action'] ) ) {
+	if ( ! isset( $_REQUEST['update_a11y'] ) ) {
 		return;
 	}
 
 	$messages = array();
 
-	if ( 'update_a11y_status' === $_REQUEST['action'] ) {
+	if ( 'refresh' === $_REQUEST['update_a11y'] ) {
 		$messages[] = array(
 			'class' => 'notice-success',
 			'text'  => __( 'Updated WSU Accessibility Training status info.', 'wsuwp-a11y-status' ),
 		);
 	}
 
-	if ( 'update_a11y_status_selected' === $_REQUEST['action'] ) {
+	if ( 'fail' === $_REQUEST['update_a11y'] ) {
+		$messages[] = array(
+			'class' => 'notice-error',
+			'text'  => __( 'WSU Accessibility Training status update failed.', 'wsuwp-a11y-status' ),
+		);
+	}
+
+	if ( 'remind_success' === $_REQUEST['update_a11y'] ) {
+		$messages[] = array(
+			'class' => 'notice-success',
+			'text'  => __( 'The WSU Accessibility Training reminder has been sent.', 'wsuwp-a11y-status' ),
+		);
+	}
+
+	if ( 'remind_fail' === $_REQUEST['update_a11y'] ) {
+		$messages[] = array(
+			'class' => 'notice-error',
+			'text'  => __( 'The WSU Accessibility Training reminder could not be sent.', 'wsuwp-a11y-status' ),
+		);
+	}
+
+	if ( 'refresh_selected' === $_REQUEST['update_a11y'] ) {
 		if ( isset( $_REQUEST['success'] ) && 0 < $_REQUEST['success'] ) {
 			$messages[] = array(
 				'class' => 'notice-success',
 				'text'  => sprintf(
 					/* translators: 1: the number of users updated in integer format */
-					__( 'Updated WSU Accessibility Training status info for %1$s users.', 'wsuwp-a11y-status' ),
+					__( 'WSU Accessibility Training task completed for %1$s users.', 'wsuwp-a11y-status' ),
 					absint( $_REQUEST['success'] )
 				),
 			);
 		}
-
 		if ( isset( $_REQUEST['fail'] ) && 0 < $_REQUEST['fail'] ) {
 			$messages[] = array(
 				'class' => 'notice-error',
 				'text'  => sprintf(
 					/* translators: 1: the number of users updated in integer format */
-					__( 'WSU Accessibility Training status update failed for %1$s users.', 'wsuwp-a11y-status' ),
+					__( 'WSU Accessibility Training task failed for %1$s users.', 'wsuwp-a11y-status' ),
 					absint( $_REQUEST['fail'] )
 				),
 			);
 		}
 	}
 
-	if ( Init\Setup::$slug . '_db_update_complete' === $_REQUEST['action'] ) {
+	if ( Init\Setup::$slug . '_db_update_complete' === $_REQUEST['update_a11y'] ) {
 		$messages[] = array(
 			'class' => 'notice-success',
 			'text'  => __( 'Updated WSUWP Accessibility Status plugin database.', 'wsuwp-a11y-status' ),
@@ -200,4 +220,83 @@ function user_a11y_status_notice__action() {
 			esc_html( $message['text'] )
 		);
 	}
+}
+
+/**
+ * Sends a user an email with their accessibility status.
+ *
+ * @since 1.1.0
+ *
+ * @param int $user_id The WP user ID of the user to update.
+ * @return booleen True on successful email sent, false on failure.
+ */
+function send_a11y_user_reminder( $user_id = '' ) {
+	if ( ! $user_id ) {
+		error( __( 'Please supply a valid user ID.', 'wsuwp-a11y-status' ) );
+		return false;
+	}
+
+	$user = get_user_by( 'id', $user_id );
+
+	if ( is_multisite() ) {
+		$site_name = get_network()->site_name;
+	} else {
+		$site_name = wp_specialchars_decode( get_option( 'blogname' ), ENT_QUOTES );
+	}
+
+	$user_email = $user->user_email;
+	$user_login = $user->user_login;
+
+	$title   = 'WSU Accessibility Training';
+	$message = __( 'This WSU Accessibility Training status update is for the following account:', 'wsuwp-a11y-status' ) . "\r\n\r\n";
+	/* translators: %s: Site name. */
+	$message .= sprintf( __( 'Site Name: %s', 'wsuwp-a11y-status' ) . "\r\n", $site_name );
+	/* translators: %s: User login */
+	$message .= sprintf( __( 'Username: %s', 'wsuwp-a11y-status' ) . "\r\n\r\n", $user_login );
+	$message .= __( 'If this is not your account or you believe the reported status is incorrect, please contact your site administrator.', 'wsuwp-a11y-status' ) . "\r\n\r\n";
+
+	// Build the messages for uncertified, expired certification, and soon-to-expire certification.
+	if ( ! user\is_user_certified( $user ) ) {
+		if ( user\was_user_certified( $user ) ) {
+			// User certification expired.
+			$title    = 'Expired: WSU Accessibility Training';
+			$message .= sprintf(
+				/* translators: 1: the human readble time remaining; 2: the expiration date */
+				'<strong> ' . __( 'Your certification expired %1$s ago, on %2$s.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n",
+				user\get_user_a11y_expire_diff( $user ),
+				user\get_user_a11y_expiration_date( $user )
+			);
+			$message .= __( 'Please renew your accessibility certification at the following web address:', 'wsuwp-a11y-status' ) . "\r\n";
+		} else {
+			// User not certified now or ever.
+			$title    = 'Required: WSU Accessibility Training';
+			$message .= '<strong> ' . __( 'No certification found.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n";
+			$message .= __( 'Please take the WSU Accessibility Training at the following web address:', 'wsuwp-a11y-status' ) . "\r\n";
+		}
+		$message .= esc_url( 'https://go.wsu.edu/web-accessibility' ) . "\r\n\r\n";
+	} else {
+		$message .= sprintf(
+			/* translators: 1: the human readble time remaining; 2: the expiration date */
+			'<strong>' . __( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n",
+			user\get_user_a11y_expire_diff( $user ),
+			user\get_user_a11y_expiration_date( $user )
+		);
+		if ( user\is_user_a11y_expires_one_month( $user ) ) {
+			// User certification expires soon.
+			$title    = 'Expiring soon: WSU Accessibility Training';
+			$message .= __( 'Please renew your accessibility certification at the following web address:', 'wsuwp-a11y-status' ) . "\r\n";
+			$message .= esc_url( 'https://go.wsu.edu/web-accessibility' ) . "\r\n\r\n";
+		}
+	}
+
+	$message .= __( 'About the Required Accessibility Training:' ) . "\r\n";
+	/* translators: %s: Accessibility training URL. */
+	$message .= __( 'The WSU web accessibility policy, Executive Policy 7 (effective August 23, 2017), requires all content publishers at the University to successfully complete the annual web accessibility training before publishing content online (see BPPM 85.55).', 'wsuwp-a11y-status' );
+
+	// Try sending the email.
+	if ( $message && ! wp_mail( $user_email, wp_specialchars_decode( $title ), $message ) ) {
+		return false;
+	}
+
+	return true;
 }
