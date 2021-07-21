@@ -34,7 +34,7 @@
 		"cssnano": "^5.0.7",
 		"npm-package-json-lint": "^5.1.0",
 		"npm-run-all": "^4.1.x",
-		"postcss": "^8.3.5",
+		"postcss": "^8.3.6",
 		"postcss-cli": "^8.3.1",
 		"postcss-preset-env": "^6.7.0",
 		"rimraf": "^3.0.2",
