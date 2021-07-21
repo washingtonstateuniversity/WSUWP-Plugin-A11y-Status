@@ -7,7 +7,7 @@ Author: washingtonstateuniversity, Adam Turner
 Author URI: https://github.com/washingtonstateuniversity/
 Plugin URI: https://github.com/washingtonstateuniversity/wsuwp-plugin-a11y-status
 Text Domain: wsuwp-a11y-status
-Requires at least: 4.7
+Requires at least: 5.7
 Tested up to: 5.2.3
 Requires PHP: 7.0
 */
