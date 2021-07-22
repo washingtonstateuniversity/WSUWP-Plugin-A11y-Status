@@ -56,7 +56,7 @@ function set_default_settings() {
  */
 function usermeta_form_field_nid( $user ) {
 	// Only allow administrators to modify the WSU NID usermeta.
-	if ( ! current_user_can( 'list_users' ) ) {
+	if ( ! current_user_can( 'edit_users' ) ) {
 		return;
 	}
 	?>
@@ -94,7 +94,7 @@ function usermeta_form_field_nid_update( $user_id ) {
 	check_admin_referer( 'update-user_' . $user_id );
 
 	// Check permissions.
-	if ( ! current_user_can( 'list_users' ) || ! current_user_can( 'edit_user', $user_id ) ) {
+	if ( ! current_user_can( 'edit_users' ) || ! current_user_can( 'edit_user', $user_id ) ) {
 		return false;
 	}
 

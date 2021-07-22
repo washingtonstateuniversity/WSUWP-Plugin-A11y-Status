@@ -147,6 +147,7 @@ class Setup {
 		// Admin hooks.
 		add_filter( 'manage_users_columns', 'WSUWP\A11yStatus\admin\add_a11y_status_user_column' );
 		add_filter( 'manage_users_custom_column', 'WSUWP\A11yStatus\admin\manage_a11y_status_user_column', 10, 3 );
+		add_filter( 'manage_users_sortable_columns', 'WSUWP\A11yStatus\admin\manage_a11y_status_user_column_sortable', 10, 1 );
 		add_filter( 'user_row_actions', 'WSUWP\A11yStatus\admin\add_a11y_status_user_row_action', 10, 2 );
 		add_action( 'admin_init', 'WSUWP\A11yStatus\admin\handle_a11y_status_actions' );
 		add_filter( 'bulk_actions-users', 'WSUWP\A11yStatus\admin\add_a11y_status_user_bulk_action', 10, 1 );
@@ -283,7 +284,7 @@ class Setup {
 			// Redirect to a clean URL after the upgrade is finished.
 			wp_safe_redirect(
 				add_query_arg(
-					array( 'action' => self::$slug . '_db_update_complete' ),
+					array( 'update_a11y' => self::$slug . '_db_update_complete' ),
 					admin_url( 'plugins.php' )
 				)
 			);

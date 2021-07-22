@@ -1,6 +1,6 @@
 # WSUWP A11y Status
 
-[![Build Status](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status.svg?branch=stable)](https://travis-ci.org/washingtonstateuniversity/WSUWP-Plugin-A11y-Status)
+[![Support Level](https://img.shields.io/badge/support-active-green.svg)](#support-level) [![Build Status](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/actions/workflows/coding-standards.yml/badge.svg)](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/actions) [![Release Version](https://img.shields.io/github/v/release/washingtonstateuniversity/WSUWP-Plugin-A11y-Status)](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/releases/latest) ![WordPress tested up to version 5.8.0](https://img.shields.io/badge/WordPress-v5.8.0%20tested-success.svg) [![GPLv3 License](https://img.shields.io/github/license/washingtonstateuniversity/WSUWP-Plugin-A11y-Status)](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/blob/develop/LICENSE.md)
 
 ## Overview
 
@@ -51,3 +51,15 @@ The following commands will handle basic build functions. (Remove the `-s` flag 
 - `npm run build:styles -s`: Compile CSS.
 
 See the scripts section of `package.json` for additional available commands.
+
+## Support Level
+
+**Active:** WSU HRS actively works on this plugin. We plant to continue work for the foreseeable future, adding new features, enhancing existing ones, and maintaining compatability with the latest version of WordPress. Bug reports, feature requests, questions, and pull requests are welcome.
+
+## Changelog
+
+All notable changes are documented in the [CHANGELOG.md](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/blob/develop/CHANGELOG.md), with dates and version numbers.
+
+## Contributing
+
+Please submit bugs and feature requests through [GitHub Issues](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/issues). Refer to [CONTRIBUTING.md](https://github.com/washingtonstateuniversity/WSUWP-Plugin-A11y-Status/blob/develop/CONTRIBUTING.md) for the development workflow and details for submitting pull requests.
