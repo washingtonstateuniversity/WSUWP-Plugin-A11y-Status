@@ -262,7 +262,7 @@ function send_a11y_user_reminder( $user_id = '' ) {
 			$title    = 'Expired: WSU Accessibility Training';
 			$message .= sprintf(
 				/* translators: 1: the human readble time remaining; 2: the expiration date */
-				'<strong> ' . __( 'Your certification expired %1$s ago, on %2$s.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n",
+				__( 'Your certification expired %1$s ago, on %2$s.', 'wsuwp-a11y-status' ) . "\r\n\r\n",
 				user\get_user_a11y_expire_diff( $user ),
 				user\get_user_a11y_expiration_date( $user )
 			);
@@ -270,14 +270,14 @@ function send_a11y_user_reminder( $user_id = '' ) {
 		} else {
 			// User not certified now or ever.
 			$title    = 'Required: WSU Accessibility Training';
-			$message .= '<strong> ' . __( 'No certification found.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n";
+			$message .= __( 'No certification found.', 'wsuwp-a11y-status' ) . "\r\n\r\n";
 			$message .= __( 'Please take the WSU Accessibility Training at the following web address:', 'wsuwp-a11y-status' ) . "\r\n";
 		}
 		$message .= esc_url( 'https://go.wsu.edu/web-accessibility' ) . "\r\n\r\n";
 	} else {
 		$message .= sprintf(
 			/* translators: 1: the human readble time remaining; 2: the expiration date */
-			'<strong>' . __( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ) . "</strong>\r\n\r\n",
+			__( 'Your certification expires in %1$s, on %2$s.', 'wsuwp-a11y-status' ) . "\r\n\r\n",
 			user\get_user_a11y_expire_diff( $user ),
 			user\get_user_a11y_expiration_date( $user )
 		);
