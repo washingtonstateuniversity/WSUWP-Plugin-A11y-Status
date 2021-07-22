@@ -16,7 +16,7 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 ### Security (in case of vulnerabilities.)
 -->
 
-## 1.1.0-rc.1 (:construction: Future)
+## 1.1.0 (2021-07-22)
 
 ### Added
 
@@ -27,6 +27,7 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 
 ### Changed
 
+- Bump WP tested-to to 5.8.
 - Close #28 make a11y status user table column sortable. (855dd27)
 - Close #29 set default permission level to network/site admin. (c1d98b7)
 - Update README document with new badges and add contributing info. (9ffffe1)
