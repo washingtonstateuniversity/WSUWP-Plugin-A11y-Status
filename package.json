@@ -35,7 +35,7 @@
 		"npm-package-json-lint": "^5.1.0",
 		"npm-run-all": "^4.1.x",
 		"postcss": "^8.4.12",
-		"postcss-cli": "^8.3.1",
+		"postcss-cli": "^9.1.0",
 		"postcss-preset-env": "^6.7.0",
 		"rimraf": "^3.0.2",
 		"stylelint": "^13.13.1"
