@@ -18,7 +18,29 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 
 ## 1.2.0-rc.1 (:construction: TBD)
 
+### Changed
 
+- Add Update URI plugin header, close #48. (1909d29)
+- Upgrade stylelint from 13.13.1 to 14.6.0. (6253e15)
+- Upgrade @wordpress/stylelint-config from 19.1.0 to 20.0.2. (67b6eee)
+- Upgrade browserlist database. (1ac4851)
+- Upgrade npm-package-json-lint from 5.1.0 to 6.0.3. (4779ff1)
+- Upgrade postcss-preset-env from 6.7.0 to 7.4.2. (e439fc1)
+- Update postcss from 8.3.6 to 8.4.12. (77cc5d9)
+- Upgrade postcss-cli from 8.3.1 to 9.1.0. (f8f3dfe)
+- Update cssnano from 5.0.7 to 5.1.4. (565b2ee)
+- Update roave/security-advisories dev-master from fc5e5d7 to 86b842d. (e2c7be2)
+
+### Security
+
+- Bump squizlabs/php_codesniffer from 3.6.0 to 3.6.2. (9d1870e)
+- Bump dealerdirect/phpcodesniffer-composer-installer from 0.7.1 to 0.7.2. (8fb4ae1)
+- Bump sirbrillig/phpcs-variable-analysis from 2.11.2 to 2.11.3. (e99ff1a)
+- Bump @wordpress/npm-package-json-lint-config from 4.1.0 to 4.1.2. (4681512)
+- Bump ansi-regex from 5.0.0 to 5.0.1. (ea71801)
+- Bump nanoid from 3.1.23 to 3.2.0. (1f2ecf6)
+- Bump nth-check from 2.0.0 to 2.0.1. (5fe1952)
+- Bump path-parse from 1.0.6 to 1.0.7. (1d9fc95)
 
 ## 1.1.0 (2021-07-22)
 
