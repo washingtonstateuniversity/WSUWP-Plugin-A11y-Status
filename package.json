@@ -29,7 +29,7 @@
 		"Firefox ESR"
 	],
 	"devDependencies": {
-		"@wordpress/npm-package-json-lint-config": "^4.1.0",
+		"@wordpress/npm-package-json-lint-config": "^4.1.2",
 		"@wordpress/stylelint-config": "^20.0.2",
 		"cssnano": "^5.1.4",
 		"npm-package-json-lint": "^6.0.3",
