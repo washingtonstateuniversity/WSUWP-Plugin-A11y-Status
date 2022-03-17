@@ -20,6 +20,7 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 
 ### Changed
 
+- Bump WordPress tested-to to 5.9.2.
 - Add Update URI plugin header, close #48. (1909d29)
 - Upgrade stylelint from 13.13.1 to 14.6.0. (6253e15)
 - Upgrade @wordpress/stylelint-config from 19.1.0 to 20.0.2. (67b6eee)
