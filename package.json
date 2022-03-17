@@ -1,6 +1,6 @@
 {
 	"name": "@wsuwp/wsuwp-plugin-a11y-status",
-	"version": "1.1.0",
+	"version": "1.2.0",
 	"description": "A plugin to monitor the WSU Accessibility Training certification status of registered WP users.",
 	"author": "Adam Turner",
 	"contributors": [
@@ -29,16 +29,16 @@
 		"Firefox ESR"
 	],
 	"devDependencies": {
-		"@wordpress/npm-package-json-lint-config": "^4.1.0",
-		"@wordpress/stylelint-config": "^19.1.0",
-		"cssnano": "^5.0.7",
-		"npm-package-json-lint": "^5.1.0",
+		"@wordpress/npm-package-json-lint-config": "^4.1.2",
+		"@wordpress/stylelint-config": "^20.0.2",
+		"cssnano": "^5.1.4",
+		"npm-package-json-lint": "^6.0.3",
 		"npm-run-all": "^4.1.x",
-		"postcss": "^8.3.6",
-		"postcss-cli": "^8.3.1",
-		"postcss-preset-env": "^6.7.0",
+		"postcss": "^8.4.12",
+		"postcss-cli": "^9.1.0",
+		"postcss-preset-env": "^7.4.2",
 		"rimraf": "^3.0.2",
-		"stylelint": "^13.13.1"
+		"stylelint": "^14.6.0"
 	},
 	"scripts": {
 		"build": "run-s clean test 'build:*'",
