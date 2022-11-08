@@ -1,7 +1,7 @@
 <?php
 /**
  * Plugin Name: WSUWP A11y Status
- * Version: 1.2.1
+ * Version: 1.2.2-rc.1
  * Description: A plugin to view users' WSU Accessibility Training status in the Admin area.
  * Author: washingtonstateuniversity, Adam Turner
  * Author URI: https://github.com/washingtonstateuniversity/
