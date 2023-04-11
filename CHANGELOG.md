@@ -16,6 +16,12 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 ### Security (in case of vulnerabilities.)
 -->
 
+## TBD
+
+### Changed
+
+- Bump WordPress tested-to to 6.2.
+
 ## 1.2.2 (2022-11-10)
 
 ### Changed
