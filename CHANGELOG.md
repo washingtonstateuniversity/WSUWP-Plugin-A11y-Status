@@ -16,7 +16,7 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 ### Security (in case of vulnerabilities.)
 -->
 
-## TBD
+## 1.2.3 (2023-04-11)
 
 ### Changed
 
