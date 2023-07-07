@@ -38,7 +38,7 @@
 		"postcss-cli": "^9.1.0",
 		"postcss-preset-env": "^7.4.2",
 		"rimraf": "^3.0.2",
-		"stylelint": "^14.6.0"
+		"stylelint": "^15.10.1"
 	},
 	"scripts": {
 		"build": "run-s clean test 'build:*'",
