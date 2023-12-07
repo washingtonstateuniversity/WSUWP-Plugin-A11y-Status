@@ -114,6 +114,12 @@ class WSU_API {
 
 		// Parse the desired content from the API response.
 		$this->result = json_decode( wp_remote_retrieve_body( $this->wsu_api_response ), true );
+
+		// The WSU API can return a null result with a 200 status code.
+		if ( ! is_array( $this->result ) ) {
+			return false;
+		}
+
 		$this->result = array_shift( $this->result );
 
 		// Sanitize API data for saving in the database.
