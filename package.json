@@ -1,6 +1,6 @@
 {
 	"name": "@wsuwp/wsuwp-plugin-a11y-status",
-	"version": "1.2.3",
+	"version": "1.2.4",
 	"description": "A plugin to monitor the WSU Accessibility Training certification status of registered WP users.",
 	"author": "Adam Turner",
 	"contributors": [
