@@ -16,6 +16,22 @@ Changelog formatting (https://keepachangelog.com/en/1.0.0/):
 ### Security (in case of vulnerabilities.)
 -->
 
+## 1.2.4 (2023-12-08)
+
+### Changed
+
+- Bump WP tested-to to 6.4.2, close #58. (e5361dd)
+- Allow php codesniffer plugins. (01e6003)
+
+### Fixed
+
+- Fix #56 crash on null WSU API response. (01e6003)
+
+### Security
+
+- Bump postcss from 8.4.25 to 8.4.31. (c5408c1)
+- Bump stylelint from 14.6.0 to 15.10.1. (d8a2b30)
+
 ## 1.2.3 (2023-04-11)
 
 ### Changed
