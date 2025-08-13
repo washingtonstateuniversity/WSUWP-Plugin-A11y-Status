@@ -4,6 +4,9 @@
 
 ## Overview
 
+> [!CAUTION]
+> As of 26 July 2024, this project is archived and no longer being actively maintained.
+
 This WordPress plugin helps site administrators monitor the WSU Web Accessibility Training status of all users on the site and to notify individual users when their training status needs attention.
 
 ## Description
@@ -54,7 +57,7 @@ See the scripts section of `package.json` for additional available commands.
 
 ## Support Level
 
-**Active:** WSU HRS actively works on this plugin. We plant to continue work for the foreseeable future, adding new features, enhancing existing ones, and maintaining compatability with the latest version of WordPress. Bug reports, feature requests, questions, and pull requests are welcome.
+**Archived:** WSU HRS no longer maintains this plugin.
 
 ## Changelog
 
